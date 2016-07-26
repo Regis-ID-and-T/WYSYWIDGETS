@@ -1,6 +1,5 @@
 # WYSYWIDGETS
 Javascripts to extend LMS WYSIWYG tools
-
 (LMS = "Learning Management System" aka D2L, Canvas, Moodle)<br>
 (WYSIWYG = "What You See Is What You Get")
 
