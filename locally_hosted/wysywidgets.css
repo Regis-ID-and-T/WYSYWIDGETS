@@ -1,0 +1,39 @@
+.button_and_target_wrapper_button{margin-left:auto; margin-right:auto; width:80%; padding:10px; background-color:#ddd;}
+.button_wrapper_button{width:35%; float:left; overflow:hidden;}
+.target_text_wrapper_button{width:62%; float:right; background-color:#bbb; border-radius:5px; overflow:hidden; padding:5px;}
+.target_text_wrapper_button:focus{width:62%; float:right; background-color:#bbb; border-radius:5px; overflow:hidden; padding:4px; border:1px solid black;}
+.target_text_wrapper_button *, .target_text_wrapper_button:focus *{max-width:98%;}
+.button_button_chosen{border:1px solid #777; border-radius:5px; background-color:#bbb; color:#000; margin-bottom:5px;}
+.button_button_notChosen{border:1px solid #777; border-radius:5px; background-color:#fff; color:#002b49; margin-bottom:5px; cursor:pointer;}
+.button_button_notChosen:hover, .button_button_notChosen:focus{border:1px solid #777; border-radius:5px; background-color:#002b49; color:#fff; margin-bottom:5px; cursor:pointer;}
+	
+.button_and_target_wrapper_tab{margin-left:auto; margin-right:auto; width:80%; padding:10px; background-color:#ddd;}
+.button_wrapper_tab{width:100%; float:left; overflow:hidden;}
+.target_text_wrapper_tab{width:100%; float:right; background-color:#bbb; margin-left:15px; border-radius:0 5px 5px 5px; overflow:hidden; padding:5px;}
+.target_text_wrapper_tab:focus{width:100%; float:right; background-color:#bbb; margin-left:15px; border-radius:0 5px 5px 5px; overflow:hidden; padding:4px; border:1px solid black;}
+.target_text_wrapper_tab *, .target_text_wrapper_tab:focus *{max-width:98%;}
+.button_tab_chosen{float:left; background-color:#bbb; color:#000; border:1px solid #bbb; border-radius:5px 5px 0 0; margin-right:5px; border-bottom:none; padding:5px;}
+.button_tab_notChosen{float:left; background-color:#fff; color:#002b49; border:1px solid #bbb; border-radius:5px 5px 0 0; cursor:pointer; margin-right:5px; border-bottom:none; padding:5px;}
+.button_tab_notChosen:hover, .button_tab_notChosen:focus{float:left; background-color:#002b49; color:#fff; border:1px solid #bbb; border-radius:5px 5px 0 0; cursor:pointer; margin-right:5px; border-bottom:none; padding:5px;}
+
+.button_tab, .button_button, .inlineHyperlink, .tooltip {width:98%;}
+.button_tab td *, .button_button td *, .inlineHyperlink td *, .tooltip td *{max-width:680px;}
+.button_tab caption{background-color:#0cc; margin-left:auto; margin-right:auto; border:3px dotted #ccc;}
+.button_button caption{background-color:#c0c; margin-left:auto; margin-right:auto; border:3px dotted #ccc;}
+.inlineHyperlink caption{background-color:#cc0; margin-left:auto; margin-right:auto; border:3px dotted #ccc;}
+.tooltip caption{background-color:#c0c; margin-left:auto; margin-right:auto; border:3px dotted #ccc;}
+
+
+.inlineHyperlink_notChosen {color:#ff0000; font-size:larger; cursor:pointer;}
+.inlineHyperlink_chosen {color:#00ff00; font-size:larger; cursor:pointer;}
+.inlineHyperlink_notChosen:focus, .inlineHyperlink_chosen:focus, .inlineHyperlink_notChosen:hover, .inlineHyperlink_chosen:hover{background-color:#ddd;}
+.hiddenSpan {display: inline-block; float: left; width: 100%; background-color: #dce1f1; border: 1px solid black; border-radius:5px; padding:8px; }
+.hiddenSpan *{max-width:98%;}
+
+.tooltip_notHovered {color:#ff0000; font-size:larger; cursor:pointer;}
+.tooltip_hovered {color:#00ff00; font-size:larger; cursor:pointer;}
+.tooltip_notHovered:focus, .tooltip_hovered:focus, .tooltip_notHovered:hover, .tooltip_hovered:hover{background-color:#ddd;}
+#tooltip_target{position:absolute; width:20%; max-width:60%; padding:10px; border:2px solid black; border-radius:5px; background-color:#fff;}
+
+.hidden{display:none;}
+annotation{display:none;}

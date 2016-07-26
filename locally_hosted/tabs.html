@@ -1,0 +1,393 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Table Test</title>
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href="https://rhchp.regis.edu/css/course_css/stylesheets/ccis/reset_normalize_clearfix_min_being_edited.css" rel="stylesheet" type="text/css"/>
+<link href="https://rhchp.regis.edu/css/course_css/stylesheets/ccis/fixin.css" rel="stylesheet" type="text/css" media="screen" />
+<link href="https://rhchp.regis.edu/css/course_css/ccis/css/print.css" rel="stylesheet" type="text/css" media="print"/>
+
+<style type="text/css">
+	.chosen{border:1px solid #777; border-radius:5px; background-color:#bbb; color:#000; margin-bottom:5px;}
+	.notChosen{border:1px solid #777; border-radius:5px; background-color:#fff; color:#002b49; margin-bottom:5px; cursor:pointer;}
+	.notChosen:hover{border:1px solid #777; border-radius:5px; background-color:#002b49; color:#fff; margin-bottom:5px; cursor:pointer;}
+	
+	.button_and_target_wrapper{margin-left:auto; margin-right:auto; width:60%; padding:10px; background-color:#ddd;}
+	.button_wrapper{width:35%; float:left; overflow:hidden;}
+	.button_text_target_wrapper{width:62%; float:right; background-color:#bbb; border-radius:5px; overflow:hidden;}
+	.buttonTarget{background-color:#c0c;}
+	
+	.tab_and_target_wrapper{margin-left:auto; margin-right:auto; width:60%; padding:10px; background-color:#ddd;}
+	.tab_wrapper{width:100%; float:left; overflow:hidden;}
+	.tab_wrapper .chosen{float:left; border-width:1px 1px 0 1px; border-color:#bbb; border-radius:5px 5px 0 0; margin-bottom:0;}
+	.tab_wrapper .notChosen{float:left; border-width:1px 1px 0 1px; border-radius:5px 5px 0 0; margin-bottom:0;}
+	.tab_wrapper .notChosen:hover{float:left; border-width:1px 1px 0 1px; border-radius:5px 5px 0 0; margin-bottom:0;}
+	.tab_text_target_wrapper{width:100%; float:right; background-color:#bbb; margin-left:15px; border-radius:0 5px 5px 5px; overflow:hidden;}
+	.tabTarget{background-color:#0cc;}
+	.text_target {padding: 1em .5em 1em .5em;}
+	
+	#tabTable caption{background-color:#0cc; margin-left:auto; margin-right:auto; border:3px dotted #ccc;}
+	#buttonTable caption{background-color:#c0c; margin-left:auto; margin-right:auto; border:3px dotted #ccc;}
+
+	.hidden{display:none;}
+	annotation{display:none;}
+</style>
+<script type="text/javascript">
+var globalTimeout;
+globalTimeout = setTimeout(checkJax,1000);
+function checkJax(){
+	if(document.getElementById("MathJax_Message")){
+		MathJax.Hub.Startup.signal.Interest(
+			function (message) {
+				if (message == "End"){
+					var theseNOBR = document.getElementsByTagName("NOBR");
+					for(var i=0, iMAX = theseNOBR.length; i<iMAX; i++){
+					    theseNOBR[i].childNodes[0].lastChild.style.borderLeftColor="transparent";
+					}
+					clearTimeout(globalTimeout);
+				}
+			}
+		);
+	}
+	else{
+		globalTimeout = setTimeout(checkJax,1000);
+	}
+}
+</script>
+
+<script type="text/javascript">
+var whichListenerLoader = "newListener";
+
+function clickedStuff(evnt){ // CROSS BROWSER EVENT HANDLING FOR SINGLE-CLICK, ENTER AND SPACE KEY-PRESSES
+	// evnt.preventDefault(); // used if clickedStuff might include an <a> or a <button> etc
+	// evnt.stopPropagation(); // used if clickedStuff might be found inside of other clickedStuff or if a generic event handler is used instead of an object specific event listener
+	if (!evnt) var evnt = window.event;
+	if (evnt.target){var clickedThis = evnt.target;}
+	else if (evnt.srcElement){var clickedThis = evnt.srcElement;}
+	if (clickedThis.nodeType == 3){clickedThis = clickedThis.parentNode;} // http://www.quirksmode.org/js/events_properties.html safari hack; may also be helpful when preventDefault enabled
+	if(evnt.which){var keynum = evnt.which;}
+	else if(evnt.button){var keynum = evnt.button;}
+	else if(evnt.keyCode) {var keynum = evnt.keyCode;}
+	if(keynum && (keynum == 0 || keynum == 1 || keynum == 13 || keynum == 32)){
+		changeText(clickedThis);
+	}
+}
+
+function changeText(stuffClicked){
+	// DETERMINE APPROPRIATE TABLE DATA BASED ON BUTTON ID
+	var whatType = stuffClicked.id.split("_")[0];
+	var buttonNum = stuffClicked.id.split("_")[1]*1;	
+	// FIND APPROPRIATE TEXT TARGET
+	var textTargetDiv = stuffClicked.parentNode.parentNode.lastChild.getElementsByTagName("DIV")[0];
+	var sourceTD = document.getElementById(whatType+"Table").getElementsByTagName("TR")[buttonNum].getElementsByTagName("TD")[2];
+	textTargetDiv.innerHTML = sourceTD.innerHTML;
+	// SET THE CLASSES OF ALL BUTTONS IN THE GROUP TO notChosen
+	var changeClassButtons = stuffClicked.parentNode.getElementsByTagName("P");
+	for (var bi=0; bi<changeClassButtons.length; bi++){
+		changeClassButtons[bi].className = "notChosen";
+	}
+	// SET THE CLICKED BUTTON'S CLASS TO CHOSEN
+	stuffClicked.className = "chosen";
+}
+
+function findTableContent(){
+	var buttonTable = "";
+	var tabTable = "";
+	// DETERMINE IF DATA TABLES EXIST AND, IF SO, UPDATE APPROPRIATE VARIABLES
+	if(document.getElementById("buttonTable")){
+		var buttonTable = document.getElementById("buttonTable");
+		// DETERMINE IF THE USER HAS ENTERED CONTENT INTO ONE OF THE BUILDER TABLES, IF SO, CALL THE INTERACTION BUILDING FUNCTION
+		if (buttonTable.getElementsByTagName("TD")[0].innerHTML != ""){buildInteraction("button");}
+		// HIDE THE DATA TABLES
+		buttonTable.className = "hidden";
+	}
+	if(document.getElementById("tabTable")){
+		var tabTable = document.getElementById("tabTable");
+		// DETERMINE IF THE USER HAS ENTERED CONTENT INTO ONE OF THE BUILDER TABLES, IF SO, CALL THE INTERACTION BUILDING FUNCTION
+		if (tabTable.getElementsByTagName("TD")[0].innerHTML != ""){buildInteraction("tab");}
+		// HIDE THE DATA TABLES
+		tabTable.className = "hidden";
+	}
+	// RELOAD THE LISTENERS AFTER THE INTERACTIVE ELEMENTS ARE APPENDED TO THE DOCUMENT
+	whichListener[whichListenerLoader]();
+}
+
+// STRIP FUNCTION USED BECAUSE THE WYSIWY EDITOR OFTEN ADDS <p> OR <span> ELEMENTS TO <td> ELEMENTS
+function strip(html){
+	var tmp = document.createElement("DIV");
+	tmp.innerHTML = html;
+	return tmp.textContent || tmp.innerText || "";
+}
+
+// BUILD THE INTERACTIVE COMPONENTS
+function buildInteraction(suffix){
+	var colCheckVal = 99; var doStuff = 0; var thisInitialText = ""; var whichClass = "";
+	var theseRows = document.getElementById(suffix+"Table").getElementsByTagName("TR");
+	var theseCells = []; var thisClickable = "";
+	var topWrapper = []; var clickableWrapper = []; var textTargetWrapper = []; textTarget = [];
+	var interactiveTargets = [];
+	var findTargets = document.getElementsByTagName("P");
+	for (var fi=0; fi<findTargets.length; fi++){
+		if (findTargets[fi].className && findTargets[fi].className == suffix+"Target"){
+			interactiveTargets.push(findTargets[fi]);
+		}
+	}
+	for(var ci=1; ci<theseRows.length; ci++){
+		theseCells = theseRows[ci].getElementsByTagName("TD");
+		if(strip(theseCells[0].innerHTML) != colCheckVal && strip(theseCells[0].innerHTML) != ""){
+			whichClass = "chosen";
+			// create new array holders
+			textTarget.push(document.createElement("DIV"));
+			textTarget[textTarget.length-1].className = "text_target";
+			textTarget[textTarget.length-1].innerHTML = theseCells[2].innerHTML;
+			textTargetWrapper.push(document.createElement("DIV"));
+			textTargetWrapper[textTargetWrapper.length-1].className = suffix + "_text_target_wrapper";
+			textTargetWrapper[textTargetWrapper.length-1].appendChild(textTarget[textTarget.length-1]);
+				
+			clickableWrapper.push(document.createElement("DIV"));
+			clickableWrapper[clickableWrapper.length-1].className = suffix + "_wrapper";
+				
+			topWrapper.push(document.createElement("DIV"));
+			topWrapper[topWrapper.length-1].className = suffix + "_and_target_wrapper clearfix";
+				
+			if (doStuff >= 1){
+				// BUILD AND THEN APPEND THE PREVIOUS CLICKABLE GROUP TO THE DOCUMENT
+				topWrapper[topWrapper.length-2].appendChild(clickableWrapper[clickableWrapper.length-2]);
+				topWrapper[topWrapper.length-2].appendChild(textTargetWrapper[textTargetWrapper.length-2]);
+				document.body.insertBefore(topWrapper[topWrapper.length-2],interactiveTargets[topWrapper.length-2]);
+				interactiveTargets[topWrapper.length-2].className="hidden";
+			}
+			doStuff++;
+		}
+                if(strip(theseCells[0].innerHTML) != ""){
+		// APPEND CLICKABLES TO THE CURRENT CLICKABLE WRAPPER
+		thisClickable = document.createElement("P");
+		thisClickable.id = suffix + "_" + ci;
+		thisClickable.className = whichClass;
+		thisClickable.innerHTML = strip(theseCells[1].innerHTML);
+		clickableWrapper[clickableWrapper.length-1].appendChild(thisClickable);
+		whichClass = "notChosen";
+		colCheckVal = strip(theseCells[0].innerHTML);
+		theseCells.length = 0;
+                }
+	}
+	if (doStuff >= 1){
+		// BUILD AND THEN APPEND THE FINAL CLICKABLE GROUP (OF THIS KIND) TO THE DOCUMENT
+		topWrapper[topWrapper.length-1].appendChild(clickableWrapper[clickableWrapper.length-1]);
+		topWrapper[topWrapper.length-1].appendChild(textTargetWrapper[textTargetWrapper.length-1]);
+		document.body.insertBefore(topWrapper[topWrapper.length-1],interactiveTargets[topWrapper.length-1]);
+		interactiveTargets[topWrapper.length-1].className="hidden";
+	}
+	interactiveTargets.length=0;
+}
+
+function buildInlineHyperlinks(){}
+
+// LISTENER LOADERS
+var whichListener = {
+	newListener: function(nothing) {
+		var allPs = document.getElementsByTagName("P");
+		for(var i=0; i<allPs.length; i++){
+			if(allPs[i].className && (allPs[i].className=="chosen" || allPs[i].className=="notChosen")){
+				allPs[i].addEventListener ('mouseup', clickedStuff, false);
+				allPs[i].addEventListener ('keyup', clickedStuff, false);
+			}
+		}
+	},
+	oldListener: function() {
+		var allPs = document.getElementsByTagName("P");
+		for(var i=0; i<allPs.length; i++){
+			if(allPs[i].className  && (allPs[i].className=="chosen" || allPs[i].className=="notChosen")){
+				allPs[i].attachEvent ('onmouseup', clickedStuff);
+				allPs[i].attachEvent ('onkeyup', clickedStuff);
+			}
+		}
+	}
+};
+
+// DETERMINE WHICH EVENT LISTENERS TO USE && LOAD CONTENT FROM DATA TABLES
+if(document.addEventListener){
+	document.addEventListener('DOMContentLoaded', function () {
+		whichListenerLoader = "newListener";
+		// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+		findTableContent();
+	});
+}
+else if(document.attachEvent){
+	document.attachEvent('onreadystatechange', function(){
+		if ( document.readyState === 'complete' ) {
+			whichListenerLoader = "oldListener";
+			// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+			findTableContent();
+		}
+	});
+}
+else if (window.addEventListener){
+	window.addEventListener('load', function () {
+		whichListenerLoader = "newListener";
+		// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+		findTableContent();
+	});
+}
+else if (window.attachEvent){
+	window.attachEvent('onload', function () {
+		whichListenerLoader = "oldListener";
+		// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+		findTableContent();
+	});
+}
+else {
+	var fn = window.onload;
+	window.onload = function() {
+		fn && fn();
+		alert('This site will not function correctly using your current browser, please try the newest browser available to you.');
+	}
+}	
+</script>
+</head>
+
+<body>
+<p class="buttonTarget">This should be replaced by button content</p>
+<p></p>
+<p>This right hurr <span style="color: red; background-color: blue;">activated button</span><span style="display: inline-block; float: left; width: 100%; background-color: gold; border: 1px solid black;">Ha ha, things and stuff and junk and other things and stuff and junk or something.<math title=""  xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mstyle>
+  <mi>&#x03B1;<!-- α --></mi>
+  <mfrac>
+    <mn>1</mn>
+    <mn>2</mn>
+  </mfrac>
+</mstyle><annotation encoding="latex">{"version":"1.1","math":"\alpha \frac{1}{2}"}</annotation></semantics></math></span> more text. And even more text and more and more and more and this and that and the other not to few other things like oh my, isn't that fancy pants and the such.</p>
+<p></p>
+<p class="tabTarget">This should be replaced by tab content</p>
+<p>&nbsp;</p>
+<table id="buttonTable"><caption>Use this table to make interactive buttons that show text</caption>
+<tbody>
+<tr style="height: 39px;">
+<th style="height: 39px;">Target Number</th>
+<th style="height: 39px;">Button Title</th>
+<th style="height: 39px;">Related Text</th>
+</tr>
+<tr style="height: 97px;">
+<td style="height: 97px;">1</td>
+<td style="height: 97px;">Button 1</td>
+<td style="height: 97px;">Text related to <strong>target 1</strong>, button 1.<math title=""  xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mstyle>
+  <mi>&#x03B1;<!-- α --></mi>
+  <mfrac>
+    <mn>1</mn>
+    <mn>2</mn>
+  </mfrac>
+</mstyle><annotation encoding="latex">{"version":"1.1","math":"\alpha \frac{1}{2}"}</annotation></semantics></math></td>
+</tr>
+<tr style="height: 97px;">
+<td style="height: 97px;">1</td>
+<td style="height: 97px;">Button 2</td>
+<td style="height: 97px;">Text related to target 1, button 2. Said Ed.&nbsp;<math title=""  xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mstyle>
+  <mi>&#x03B1;<!-- α --></mi>
+  <mfrac>
+    <mi>&#x03B3;<!-- γ --></mi>
+    <mn>3</mn>
+  </mfrac>
+</mstyle><annotation encoding="latex">{"version":"1.1","math":"\alpha \frac{\gamma}{3}"}</annotation></semantics></math></td>
+</tr>
+<tr style="height: 62px;">
+<td style="height: 62px;">1</td>
+<td style="height: 62px;">Button 3</td>
+<td style="height: 62px;">
+<h3>Text related to target 1, button 3</h3>
+</td>
+</tr>
+<tr style="height: 97px;">
+<td style="height: 97px;">2</td>
+<td style="height: 97px;">Button 1</td>
+<td style="height: 97px;">Text related to target 2, button 1&nbsp;<math title=""  xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mstyle><mi>&#945;</mi><mspace linebreak="newline"></mspace><msqrt><mn>36</mn></msqrt><mspace linebreak="newline"></mspace><msubsup><mo>&#8721;</mo><mn>2</mn><mn>4</mn></msubsup><mn>2</mn><mi>x</mi></mstyle><annotation encoding="wiris">{"version":"1.1","math":"&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;&amp;#945;&lt;/mi&gt;&lt;mspace linebreak=&quot;newline&quot;&gt;&lt;/mspace&gt;&lt;msqrt&gt;&lt;mn&gt;36&lt;/mn&gt;&lt;/msqrt&gt;&lt;mspace linebreak=&quot;newline&quot;&gt;&lt;/mspace&gt;&lt;msubsup&gt;&lt;mo&gt;&amp;#8721;&lt;/mo&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;mn&gt;4&lt;/mn&gt;&lt;/msubsup&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;/math&gt;"}</annotation></semantics></math></td>
+</tr>
+<tr style="height: 97px;">
+<td style="height: 97px;">2</td>
+<td style="height: 97px;">Button 2</td>
+<td style="height: 97px;">Text related to target 2, button 2<math title=""  xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mstyle><mi>&#945;</mi><mspace linebreak="newline"></mspace><msqrt><mn>36</mn></msqrt><mspace linebreak="newline"></mspace><msubsup><mo>&#8721;</mo><mn>2</mn><mn>4</mn></msubsup><mn>2</mn><mi>x</mi></mstyle><annotation encoding="wiris">{"version":"1.1","math":"&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;&amp;#945;&lt;/mi&gt;&lt;mspace linebreak=&quot;newline&quot;&gt;&lt;/mspace&gt;&lt;msqrt&gt;&lt;mn&gt;36&lt;/mn&gt;&lt;/msqrt&gt;&lt;mspace linebreak=&quot;newline&quot;&gt;&lt;/mspace&gt;&lt;msubsup&gt;&lt;mo&gt;&amp;#8721;&lt;/mo&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;mn&gt;4&lt;/mn&gt;&lt;/msubsup&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;/math&gt;"}</annotation></semantics></math></td>
+</tr>
+</tbody>
+</table>
+<p></p>
+<table id="tabTable"><caption>Use this table to make interactive tabs of text</caption>
+<tbody>
+<tr>
+<th>Target Number</th>
+<th>Tab Title</th>
+<th>Related Text</th>
+</tr>
+<tr>
+<td>1</td>
+<td>Tab 1</td>
+<td>Here's some tab content for target 1, tab 1.&nbsp;<math title=""  xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><semantics><mstyle>
+  <mrow>
+    <mrow>
+      <msup>
+        <mi>x</mi>
+        <mn>2</mn>
+      </msup>
+      <mo>+</mo>
+      <mrow>
+        <mn>4</mn>
+        <mo>&#x2062;</mo>
+        <mi>x</mi>
+      </mrow>
+      <mo>+</mo>
+      <mn>4</mn>
+    </mrow>
+    <mo>=</mo>
+    <mn>0</mn>
+  </mrow>
+</mstyle><annotation encoding="mathml">{"version":"1.1","math":"&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;
+  &lt;mrow&gt;
+    &lt;mrow&gt;
+      &lt;msup&gt;
+        &lt;mi&gt;x&lt;/mi&gt;
+        &lt;mn&gt;2&lt;/mn&gt;
+      &lt;/msup&gt;
+      &lt;mo&gt;+&lt;/mo&gt;
+      &lt;mrow&gt;
+        &lt;mn&gt;4&lt;/mn&gt;
+        &lt;mo&gt;&amp;#x2062;&lt;/mo&gt;
+        &lt;mi&gt;x&lt;/mi&gt;
+      &lt;/mrow&gt;
+      &lt;mo&gt;+&lt;/mo&gt;
+      &lt;mn&gt;4&lt;/mn&gt;
+    &lt;/mrow&gt;
+    &lt;mo&gt;=&lt;/mo&gt;
+    &lt;mn&gt;0&lt;/mn&gt;
+  &lt;/mrow&gt;
+&lt;/math&gt;"}</annotation></semantics></math></td>
+</tr>
+<tr>
+<td>1</td>
+<td>Tab 2</td>
+<td>Here's some tab <img src="https://pbs.twimg.com/media/CM2-RfPWoAASiE7.jpg" alt="this" title="this" />content for target 1, tab 2.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tab 1</td>
+<td>Here's some tab content for target 2, tab 1.<math title=""  xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><semantics><mstyle><mfrac><mo>&#8734;</mo><mn>0</mn></mfrac></mstyle><annotation encoding="wiris">{"version":"1.1","math":"&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mfrac&gt;&lt;mo&gt;&amp;#8734;&lt;/mo&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;/mfrac&gt;&lt;/math&gt;"}</annotation></semantics></math></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tab 2</td>
+<td>Here's some tab content for target 2, tab 2.<math title=""  xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><semantics><mstyle><msqrt><mfrac><mn>1</mn><mi mathvariant="normal">&#960;</mi></mfrac></msqrt></mstyle><annotation encoding="wiris">{"version":"1.1","math":"&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;msqrt&gt;&lt;mfrac&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;mi mathvariant=&quot;normal&quot;&gt;&amp;#960;&lt;/mi&gt;&lt;/mfrac&gt;&lt;/msqrt&gt;&lt;/math&gt;"}</annotation></semantics></math></td>
+</tr>
+</tbody>
+</table>
+<p>&nbsp;</p>
+<!--
+<table id="inlineHyperlinkTable"><caption>Use this table to make interactive, inline hyperlinks</caption>
+<tbody>
+<tr><th>Inline Hyperlink Number</th><th>Related Text</th></tr>
+<tr><td></td><td></td></tr>
+</tbody>
+</table>
+-->
+<p>&nbsp;</p>
+<p class="buttonTarget">This should be replaced by button content</p>
+<p>&nbsp;</p>
+<p class="tabTarget">This should be replaced by tab content</p>
+</body>
+</html>
