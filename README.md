@@ -1,6 +1,7 @@
 # WYSYWIDGETS
 Javascripts to extend LMS WYSIWYG tools
 
+(LMS = "Learning Management System" aka D2L, Canvas, Moodle)<br>
 (WYSIWYG = "What You See Is What You Get")
 
 Most learning management systems' WYSIWYG tools allow professors only to make and edit static content.
