@@ -1,5 +1,6 @@
 # WYSYWIDGETS
 Javascripts to extend LMS WYSIWYG tools
+
 (WYSIWYG = "What You See Is What You Get")
 
 Most learning management systems' WYSIWYG tools allow professors only to make and edit static content.
