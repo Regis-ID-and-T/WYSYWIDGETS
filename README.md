@@ -3,7 +3,7 @@ Javascripts to extend LMS WYSIWYG tools<br>
 (LMS = "Learning Management System" eg. D2L, Canvas, Moodle)<br>
 (WYSIWYG = "What You See Is What You Get" eg. MS Word, Facebook posting interface)
 
-Most learning management systems' WYSIWYG tools allow professors only to make and edit static content.
+Most learning management systems' WYSIWYG tools directly allow professors only to make and edit static content.<br>(Indirectly, professors can add dynamic content by embedding externally hosted content into their pages.)
 
 WYSYWIDGETS are sets of javascript that, when placed into html files (and quizzes), allow professors to make and edit dynamic content.
 
