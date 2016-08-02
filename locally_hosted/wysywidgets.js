@@ -112,9 +112,11 @@ var doStuff = {
 		var changeClassButtons = thisButton.parentNode.children;
 		for (var bi=0, biMAX=changeClassButtons.length; bi<biMAX; bi++){
 			changeClassButtons[bi].className = changeClassButtons[bi].className.replace("chosen","notChosen");
+			changeClassButtons[bi].setAttribute("aria-selected","false");
 		}
 		// SET THE CLICKED BUTTON'S CLASS TO CHOSEN
 		thisButton.className = thisButton.className.replace("notChosen","chosen");
+		thisButton.setAttribute("aria-selected","true");
 		textTargetDiv.focus();
 	},
 	inlineHyperlink: function(thisSpan){
@@ -160,10 +162,12 @@ var builder = {
 		// BEGIN BUILDING THE INTERACTIVE ELEMENTS
 		var button_wrapper = document.createElement("DIV");
 		button_wrapper.className = "button_wrapper_" + secondType;
+		button_wrapper.setAttribute("role", "tablist");
 		var target_text_wrapper = document.createElement("DIV");
 		// ALLOW THE TARGET_TEXT_WRAPPER TO RECEIVE FOCUS FROM KEYBOARD
 		target_text_wrapper.tabIndex = 0;
 		target_text_wrapper.className = "target_text_wrapper_" + secondType;
+		target_text_wrapper.setAttribute("role", "tabpanel");
 		// INITIALIZE SOME VARIABLES THAT WILL STORE INFORMATION FOUND IN THE THISTABLE
 		var checkVal, tableRows, buttonName, targetText, rowElements, thisButton, thisTargetText;
 		checkVal = 0;
@@ -184,16 +188,19 @@ var builder = {
 				// CREATE A P ELEMENT THAT WILL FUNCTION AS A BUTTON
 				thisButton = document.createElement("P");
 				thisButton.tabIndex = 0;
+				thisButton.setAttribute("role", "tab");
 				// DETERMINE WHETHER WE ARE IN THE FIRST DATA ROW IN OUR LOOP, IF YES, THEN CHOOSE THIS ROW'S TARGET TEXT AS THE DEFAULT TEXT SHOWN IN THE TARGETTEXT DIV
 				if(checkVal == 0){
 					// PLACE TARGETTEXT INTO THE TARGET TEXT ELEMENT
 					target_text_wrapper.innerHTML = targetText;
 					// FURTHER, MAKE SURE THAT THE BUTTON ASSOCIATED WITH THIS FIRST ROW'S DATA IS SET TO THE CHOSEN CLASS.
 					thisButton.className = "button_" + secondType + "_chosen";
+					thisButton.setAttribute("aria-selected","true");
 				}
 				else {
 					// FOR ALL OTHER ROWS OF DATA, SET THE BUTTON TO THE NOTCHOSEN CLASS
-					thisButton.className = "button_" + secondType + "_notChosen"
+					thisButton.className = "button_" + secondType + "_notChosen";
+					thisButton.setAttribute("aria-selected","false");
 				}
 				// APPEND THE BUTTON NAME TO THE NEWLY CREATED P ELEMENT
 				thisButton.innerHTML = buttonName;
@@ -217,6 +224,7 @@ var builder = {
 		if(checkVal == 1){
 			var button_and_text_wrapper = document.createElement("DIV");
 			button_and_text_wrapper.className = "button_and_target_wrapper_" + secondType + " clearfix";
+			button_and_text_wrapper.setAttribute("role", "application");
 			button_and_text_wrapper.appendChild(button_wrapper);
 			button_and_text_wrapper.appendChild(target_text_wrapper);
 			thisTable.parentNode.insertBefore(button_and_text_wrapper, thisTable);
