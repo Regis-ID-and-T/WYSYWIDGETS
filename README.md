@@ -9,3 +9,7 @@ WYSYWIDGETS are sets of javascript that, when placed into html files (and quizze
 
 
 Not all Learning Management Systems are set up the same way. Some LMSs allow users to pull css and javascript files from external sources while others do not. With this in mind, we have provided sub-directories for each case. If your LMS allows you to call external javascript, then dive into the "externally_hosted" directory, else, dive on into the "header_only" directory.
+
+
+
+In each directory there is a "How-To" html file that can help you use a wysywidget, but only after you've already 'installed' wysywidgets in your course.
