@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+<!-- trace_table.js -->
+<script type="text/javascript">
+var thisData = {};
+var correctAnswers = {};
+var thisRand = Math.round(Math.random()*10,000);
+function hashCode(val){
+	val = val.concat(thisRand);
+	var hash = 0, i, chr, len;
+	if (val.length === 0) return hash;
+	for (i = 0, len = val.length; i < len; i++) {
+		chr   = val.charCodeAt(i);
+		hash  = ((hash << 5) - hash) + chr;
+		hash |= 0; // Convert to 32bit integer
+	}
+	return Math.abs(hash);
+}
+
+// REACT TO CLICK EVENTS ON INTERACTIVE ELEMENTS
+function clickedStuff(evnt){
+	// IF NO EVENT WAS PASSED DURING THE CLICK, USE AN EVENT THAT HAD BUBBLED TO THE WINDOW AS THE EVENT
+	if (!evnt){ var evnt = window.event;}
+	// FIND THE TARGET OF THE EVENT (.TARGET FOR FF ETC AND .SRCELEMENT FOR IE)
+	if (evnt.target){var clickedThis = evnt.target;}
+	else if (evnt.srcElement){var clickedThis = evnt.srcElement;}
+	// IN THE CASE WHERE A TEXT NODE WAS CLICKED, CHANGE THE EVENT TARGET TO THE PARENT OF THAT TEXT NODE
+	if (clickedThis.nodeType == 3){clickedThis = clickedThis.parentNode;} // http://www.quirksmode.org/js/events_properties.html safari hack;
+	// FOR KEYBOARD INTERACTION, DETERMINE WHICH KEY WAS PRESSED WHILE AN ELEMENT HAD FOCUS (.WHICH, .BUTTON, AND .KEYCODE ARE CHECKED, IN ORDER, TO FIND THE RIGHT KEY IN ALL MAJOR BROWSERS)
+	if(evnt.which){var keynum = evnt.which;}
+	else if(evnt.button){var keynum = evnt.button;}
+	else if(evnt.keyCode) {var keynum = evnt.keyCode;}
+	// DETERMINE IF A LEFT CLICK OCCURRED (KEYNUM 0 OR 1, BROWSER DEPENDENT) OR IF THE SPACE BAR (13) OR ENTER KEY (32) WERE PRESSED
+	if(keynum && (keynum == 0 || keynum == 1 || keynum == 13 || keynum == 32)){
+		// HARVEST THE SECOND PART OF THE CLICKED ELEMENT'S CLASSNAME
+		if(clickedThis.tagName != "BUTTON"){
+			clickedThis = clickedThis.parentNode;
+			while(clickedThis.tagName != "BUTTON"){
+				clickedThis = clickedThis.nextSibling;
+			}
+		}
+		var interactiveType = clickedThis.className.split("_")[1];
+		// DETERMINE IF THE SECOND PART OF THE CLICKED ELEMENT'S CLASSNAME MATCHES AN EXPECTED CLASSNAME
+		if(interactiveType == "immediately" || interactiveType == "reset" || interactiveType == "answers"){
+			// CALL THE APPROPRIATE SUB-FUNCTION OF THE DOSTUFF VARIABLE BASED ON THE INTERACTIVE TYPE (HARVESTED FROM THE ELEMENT'S CLASSNAME)
+			doStuff[interactiveType](clickedThis);
+		}
+	}
+}
+
+var defaultAnswerArray = ["Incorrect. ", "Correct! "];
+doStuff = {
+	immediately: function(thisButton){
+		// combine all ids and answers to determine the hash value
+		var inputString = "", thisValue = "";
+		var theseInputs = thisButton.parentNode.getElementsByTagName("INPUT");
+		for(var i=0, imax = theseInputs.length; i<imax; i++){
+			thisValue = theseInputs[i].value || "";
+			thisId = theseInputs[i].id;
+			inputString += thisId + thisValue;
+		}
+		var answerSpot = thisButton.nextSibling;
+		while(answerSpot.tagName != "P"){answerSpot = answerSpot.nextSibling;}
+		if(thisData[hashCode(inputString.replace(/ /g,''))]){
+			answerSpot.innerHTML = defaultAnswerArray[thisData[hashCode(inputString.replace(/ /g,''))][0]] + thisData[hashCode(inputString.replace(/ /g,''))][1];
+			answerSpot.className = "feedbackP"+thisData[hashCode(inputString.replace(/ /g,''))][0];
+			if(thisData[hashCode(inputString.replace(/ /g,''))][0] == 0){thisButton.innerHTML = "Resubmit"; thisButton.style.display = "block";}
+			else{thisButton.style.display = "none";}
+		}
+		else{
+			answerSpot.innerHTML = defaultAnswerArray[0];
+			answerSpot.className = "feedbackP0";
+			thisButton.innerHTML = "Resubmit";
+			thisButton.style.display = "block";
+		}
+	},
+	reset: function(thisButton){
+		var clearThese = document.getElementsByTagName("INPUT");
+		for(var i=0, imax=clearThese.length; i<imax; i++){
+			clearThese[i].value="";
+		}
+		var allPs = document.getElementsByTagName("P");
+		for(var j=0, jmax=allPs.length; j<jmax; j++){
+			if(allPs[j].className=="feedbackP0" || allPs[j].className=="feedbackP1"){
+				allPs[j].innerHTML = "";
+				allPs[j].className="feedbackP";
+			}
+		}
+		var allButtons = document.getElementsByTagName("BUTTON");
+		for(var k=0, kmax=allButtons.length; k<kmax; k++){
+			if(allButtons[k].innerHTML == "Resubmit" || allButtons[k].innerHTML == "Submit"){
+				allButtons[k].innerHTML = "Submit";
+				allButtons[k].style.display="block";
+			}
+		}
+	},
+	answers: function(thisButton){
+		for (var key in correctAnswers) {
+			if (correctAnswers.hasOwnProperty(key)) {
+				document.getElementById(key).value = correctAnswers[key];
+			}
+		}
+	}
+};
+
+function findTableContent(){
+	// FIND THE ANSWER TABLE AND DETERMINE THE NUMBER OF COLUMNS AND ROWS TO MAKE FOR THE STUDENT INTERFACE
+	var inputTable = document.getElementsByTagName("TABLE")[0];
+	inputTable.style.display = "none";
+	var tableRows = inputTable.getElementsByTagName("TR");
+	var headerElements = tableRows[0].getElementsByTagName("TH");
+	var rowElements = [];
+	var varCount = 0; var lineNumTD = 0; var emptyCol = {};
+	var tempHeaderElement = "";
+	for(var i=0, imax = headerElements.length; i<imax; i++){
+		tempHeaderElement = headerElements[i].textContent || headerElements[i].innerText || "";
+		if(tempHeaderElement != ""){
+			varCount++;
+			if(tempHeaderElement == "line#"){
+				lineNumTD = i;
+			}
+		}
+		else{emptyCol[i]=2;}
+	}
+	varCount-=3;
+	var cellWrapperDivWidth = Math.floor(50/varCount);
+	var maxRows = 0;
+	for(var i=0, imax=tableRows.length; i<imax; i++){
+		maxRows = Math.max(maxRows,tableRows[i].getElementsByTagName("TD")[lineNumTD]);
+	}
+	// CREATE A SUBSET OF ELEMENTS THAT WILL BE REUSED DURING THE INTERFACE BUILDING PROCESS
+	var interfaceWrapper = document.createElement("DIV");
+	interfaceWrapper.className = "clearfix";
+	var rowWrapperDiv = document.createElement("DIV");
+	rowWrapperDiv.className = "rowWrapper clearfix";
+	var tempRowWrapperDiv = "";
+	var columnTitleP = document.createElement("P");
+	columnTitleP.className = "columnTitle";
+	var tempColumnTitleP = "";
+	var cellWrapperDiv = document.createElement("DIV");
+	cellWrapperDiv.className = "cellWrapper";
+	cellWrapperDiv.style.width = cellWrapperDivWidth + "%";
+	cellWrapperDiv.style.minHeight = "22px";
+	var tempCellWrapperDiv = "";
+	tempRowWrapperDiv = rowWrapperDiv.cloneNode(true);
+	
+	// CREATE THE COLUMN NAMES FOR THE STUDENT INTERFACE
+	for(var i=0, imax=lineNumTD; i<imax; i++){
+		tempHeaderElement = headerElements[i].textContent || headerElements[i].innerText || "";
+		if(tempHeaderElement != ""){
+			tempColumnTitleP = columnTitleP.cloneNode(true);
+			tempColumnTitleP.innerHTML = tempHeaderElement;
+			tempCellWrapperDiv = cellWrapperDiv.cloneNode(true);
+			tempCellWrapperDiv.appendChild(tempColumnTitleP);
+			tempRowWrapperDiv.appendChild(tempCellWrapperDiv);
+		}
+	}
+	interfaceWrapper.appendChild(tempRowWrapperDiv);
+	
+	// CREATE THE REMAINING SUBSET OF ELEMENTS THAT WILL BE REUSED DURING THE INTERFACE BUILDING PROCESS
+	var answerInput = document.createElement("INPUT");
+	answerInput.type = "text";
+	var tempAnswerInput = "";
+	var answerButton = document.createElement("BUTTON");
+	answerButton.className = "check_immediately";
+	answerButton.innerHTML = "Submit";
+	var tempAnswerButton = "";
+	var feedbackP = document.createElement("P");
+	feedbackP.className = "feedbackP";
+	var tempFeedbackP = "";
+	var tempLn = 0;
+	var tempRw = 0;
+	var tempFb = "";
+	var tempID = "";
+	
+	// LOOP THROUGH THE ANSWER TABLE, BUILD THE INTERFACE & BUILD THE JSON ANSWER KEY
+	var existingRows = {};
+	var rowString = ""; emptyRowString = "";
+	for(var i=1, imax=tableRows.length; i<imax; i++){
+		rowElements = tableRows[i].getElementsByTagName("TD");
+		tempLn = rowElements[lineNumTD].textContent || rowElements[lineNumTD].innerText;
+		if(!existingRows[tempLn] || existingRows[tempLn] != tempLn){
+			tempRowWrapperDiv = rowWrapperDiv.cloneNode(true);
+			tempRw = rowElements[lineNumTD+1].textContent || rowElements[lineNumTD+1].innerText;
+			tempFb = rowElements[lineNumTD+2].textContent || rowElements[lineNumTD+2].innerText || "";
+			for(var j=0; j<lineNumTD; j++){
+				if(!emptyCol[j] || emptyCol[j]!=2){
+					// determine if the element has an answer in it, if yes, build a div and an input, if no, just build a div
+					tempText = rowElements[j].textContent || rowElements[j].innerText || "";
+					if(tempText != "" && tempRw == 1){
+						tempAnswerInput = answerInput.cloneNode(true);
+						tempAnswerInput.id = "q" + tempLn + "a" + j;
+						tempID = tempAnswerInput.id;
+						tempCellWrapperDiv = cellWrapperDiv.cloneNode(true);
+						tempCellWrapperDiv.appendChild(tempAnswerInput);
+						tempRowWrapperDiv.appendChild(tempCellWrapperDiv);
+						rowString += tempID + tempText;
+						emptyRowString += tempID;
+						correctAnswers[tempID] = tempText;
+					}
+					else if(tempText != "" && tempRw == 0){
+						tempAnswerInput.id = "q" + tempLn + "a" + j;
+						tempID = tempAnswerInput.id;
+						// thisData[hashCode(tempID.concat(tempText).replace(/ /g,''))] = [tempRw,tempFb];
+						tempCellWrapperDiv = cellWrapperDiv.cloneNode(true);
+						tempRowWrapperDiv.appendChild(tempCellWrapperDiv);
+						rowString += tempID + tempText;
+						emptyRowString += tempID;
+					}
+					else{
+						// just build and then append the cellWrapperDiv to the rowWrapperDiv
+						tempAnswerInput = answerInput.cloneNode(true);
+						tempAnswerInput.id = "q" + tempLn + "a" + j;
+						tempID = tempAnswerInput.id;
+						tempCellWrapperDiv = cellWrapperDiv.cloneNode(true);
+						tempCellWrapperDiv.appendChild(tempAnswerInput);
+						tempRowWrapperDiv.appendChild(tempCellWrapperDiv);
+						rowString += tempID + tempText;
+						emptyRowString += tempID;
+					}
+				}
+			}
+			// combine all ids and answers to determine the hash value
+				// gonna need some sort of array to keep track of this stuff... which I will have to create earlier in the code
+				
+			// append an answer button and a feedbackP to the tempRowWrapperDiv
+			if(rowString != emptyRowString){
+				tempAnswerButton = answerButton.cloneNode(true);
+				tempFeedbackP = feedbackP.cloneNode(true);
+				tempRowWrapperDiv.appendChild(tempAnswerButton);
+				tempRowWrapperDiv.appendChild(tempFeedbackP);
+				interfaceWrapper.appendChild(tempRowWrapperDiv);
+				existingRows[tempLn] = tempLn;
+				thisData[hashCode(rowString.replace(/ /g,''))] = [tempRw,tempFb];
+			}
+			rowString = ""; emptyRowString = "";
+		}
+		else{
+			tempRw = rowElements[lineNumTD+1].textContent || rowElements[lineNumTD+1].innerText;
+			tempFb = rowElements[lineNumTD+2].textContent || rowElements[lineNumTD+2].innerText || "";
+			for(var j=0; j<lineNumTD; j++){
+				if(!emptyCol[j] || emptyCol[j]!=2){
+					// determine if the element has an answer in it, if yes, build a div and an input, if no, just build a div
+					tempText = rowElements[j].textContent || rowElements[j].innerText || "";
+					tempID = "q" + tempLn + "a" + j;
+					rowString += tempID + tempText;
+					emptyRowString += tempID;
+				}
+			}
+			if(rowString != emptyRowString){
+				thisData[hashCode(rowString.replace(/ /g,''))] = [tempRw,tempFb];
+			}
+			rowString = "";	emptyRowString = "";
+		}
+	}
+	// append a "Reset" button
+	var resetButton = document.createElement("BUTTON");
+	resetButton.className = "check_reset";
+	resetButton.innerHTML = "Reset";
+	// append a "Show answers" button
+	var answersButton = document.createElement("BUTTON");
+	answersButton.className = "check_answers";
+	answersButton.innerHTML = "Show answers";
+	var metaButtons1 = document.createElement("DIV");
+	metaButtons1.className = "meta_buttons";
+	var metaButtons2 = document.createElement("DIV");
+	metaButtons2.className = "meta_buttons";
+	metaButtons1.appendChild(resetButton);
+	metaButtons2.appendChild(answersButton);
+	interfaceWrapper.appendChild(metaButtons1);
+	interfaceWrapper.appendChild(metaButtons2);
+	// PLACE THE STUDENT INTERFACE INTO THE PAGE, JUST IN FRONT OF THE PROF'S INTERFACE TABLE, THEN REMOVE THE PROF'S INTERFACE TABLE
+	inputTable.parentNode.insertBefore(interfaceWrapper, inputTable);
+	inputTable.parentNode.removeChild(inputTable);
+	// NOW THAT THE STUDENT INTERFACE TABLE HAS BEEN REMOVED, LOAD THE STUDENT INTERFACE ELEMENT LISTENERS
+	whichListener[whichListenerLoader]();
+}
+
+
+// LISTENER LOADERS
+var whichListenerLoader = "newListener";
+
+var whichListener = {
+	newListener: function(nothing) {
+		var allButtons = document.getElementsByTagName("BUTTON");
+		for(var i=0; i<allButtons.length; i++){
+			if(allButtons[i].className && allButtons[i].className.indexOf("check")>=0){
+				allButtons[i].addEventListener ('mouseup', clickedStuff, false);
+				allButtons[i].addEventListener ('keyup', clickedStuff, false);
+			}
+		}
+		var allInputs = document.getElementsByTagName("INPUT");
+		for(var i=0; i<allInputs.length; i++){
+			allInputs[i].addEventListener ('keyup', clickedStuff, false);
+		}
+	},
+	oldListener: function(nothing) {
+		var allButtons = document.getElementsByTagName("BUTTON");
+		for(var i=0; i<allButtons.length; i++){
+			if(allButtons[i].className  && allButtons[i].className.indexOf("check")>=0){
+				allButtons[i].attachEvent ('onmouseup', clickedStuff);
+				allButtons[i].attachEvent ('onkeyup', clickedStuff);
+			}
+		}
+		var allInputs = document.getElementsByTagName("INPUT");
+		for(var i=0; i<allInputs.length; i++){
+			allInputs[i].attachEvent ('onkeyup', clickedStuff);
+		}
+	}
+};
+
+// DETERMINE WHICH EVENT LISTENERS TO USE && LOAD CONTENT FROM DATA TABLES
+if(document.addEventListener){
+	document.addEventListener('DOMContentLoaded', function () {
+		whichListenerLoader = "newListener";
+		// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+		findTableContent();
+	});
+}
+else if(document.attachEvent){
+	document.attachEvent('onreadystatechange', function(){
+		if ( document.readyState === 'complete' ) {
+			whichListenerLoader = "oldListener";
+			// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+			findTableContent();
+		}
+	});
+}
+else if (window.addEventListener){
+	window.addEventListener('load', function () {
+		whichListenerLoader = "newListener";
+		// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+		findTableContent();
+	});
+}
+else if (window.attachEvent){
+	window.attachEvent('onload', function () {
+		whichListenerLoader = "oldListener";
+		// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+		findTableContent();
+	});
+}
+else {
+	var fn = window.onload;
+	window.onload = function() {
+		fn && fn();
+		alert('This site will not function correctly using your current browser, please try the newest browser available to you.');
+	}
+}
+
+// THIS SCRIPT WILL MAKE INVISIBLE THE VERTICAL LINE THAT SHOWS UP AT THE END OF EACH BIT OF MATHJAX AS OF 03/28/2016
+var globalTimeout;
+var stopIt = 0;
+globalTimeout = setTimeout(checkJax,1000);
+function checkJax(){
+	if(document.getElementById("MathJax_Message")){
+		MathJax.Hub.Startup.signal.Interest(
+			function (message) {
+				if (message == "End"){
+					var theseNOBR = document.getElementsByTagName("NOBR");
+					for(var i=0, iMAX = theseNOBR.length; i<iMAX; i++){
+					    theseNOBR[i].childNodes[0].lastChild.style.borderLeftColor="transparent";
+					}
+					clearTimeout(globalTimeout);
+				}
+			}
+		);
+	}
+	else if(stopIt<10){
+		stopIt++;
+		globalTimeout = setTimeout(checkJax,1000);
+	}
+	else {clearTimeout(globalTimeout);}
+}
+
+</script>
+<!-- OPEN SANS CSS (USED BY REGIS FOR FONTS) -->
+<style type='text/css'>
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/K88pR3goAWT7BTt32Z01mxJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+20B4, U+2DE0-2DFF, U+A640-A69F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/RjgO7rYTmqiVp7vzi-Q5URJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/LWCjsQkB6EMdfHrEVqA1KRJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/xozscpT2726on7jbcb_pAhJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0370-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/59ZRklaO5bWGqF5A9baEERJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/u-WUoqrET9fUeobQW7jkRRJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0100-024F, U+1E00-1EFF, U+20A0-20AB, U+20AD-20CF, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/cJZKeOuBrn4kERxqtaUH3VtXRa8TVwTICgirnJhmVJw.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+
+</style>
+<!-- Normalize, reset, clearfix (used for cross-browser similarity)  -->
+<style type="text/css">
+/* box model normalization */ *,*:before,*:after{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}
+/* reset */html,body,div,applet,object,iframe, h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,span,img,dl,dt,dd,ol,ul,li,fieldset,form,label,legend{margin:0;padding:0;border:0;outline:0;font-size:100%;font-weight:normal;background:transparent;}body{line-height:1.4;}ul{list-style:none;}blockquote,q{quotes:none;}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none;}:focus{outline:0;}button a,button a:hover,button a:visited{color:#000000;text-decoration:none;}
+/*! normalize.css v3.0.3 | MIT License | github.com/necolas/normalize.css */html{font-family:'Open Sans', Arial, Helvetica, sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}article,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block;vertical-align:baseline}audio:not([controls]){display:none;height:0}[hidden],template{display:none}a{background-color:transparent}a:active,a:hover{outline:0}abbr[title]{border-bottom:1px dotted}b,strong{font-weight:bold}dfn{font-style:italic}mark{background:#ff0;color:#000}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sup{top:-0.5em}sub{bottom:-0.25em}svg:not(:root){overflow:hidden}figure{margin:1em 40px}hr{height:0}pre{overflow:auto}code,kbd,pre,samp{font-family:monospace,monospace;}button,input,optgroup,select,textarea{color:inherit;font:inherit;margin:0}button{overflow:visible}button,select{text-transform:none}button,html input[type="button"],input[type="reset"],input[type="submit"]{-webkit-appearance:button;cursor:pointer}button[disabled],html input[disabled]{cursor:default}button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}input{line-height:normal}input[type="checkbox"],input[type="radio"]{padding:0}input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{height:auto}input[type="search"]{-webkit-appearance:textfield;}input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance:none}textarea{overflow:auto}optgroup{font-weight:bold}table{border-collapse:collapse;border-spacing:0}td,th{padding:0}
+/* clearfix */.clearfix{overflow:hidden; zoom:1;}.clearfix:before,.clearfix:after{content:''; display:table;}.clearfix:after {clear:both;}
+</style>
+<!--  Default styles for all Regis university courses -->
+<style type="text/css">
+/* DOCUMENT BASICS*/
+html{
+	background: url(https://rhchp.regis.edu/css/course_css/images/core/background_triangle.jpg) #cccccc;
+	background-repeat: repeat;
+	font-family:'Open Sans', Arial, Helvetica, sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;
+}
+html:after {
+	content: "© Regis University. All Rights Reserved.";
+	text-align: center;
+	font-size: .75em;
+	color: #002b49;
+	width:100%;
+	display:block;
+}
+
+body {
+	margin: .5em .25em 2em .25em;
+	padding-bottom:20px;
+	background-color:#FFFFFF;
+}
+
+/* STANDARD TEXT */
+h1 {
+	font-size: 1.25em;
+	font-weight: bold;
+	text-align: right;
+	color: white;
+	background-color: #002b49;
+	margin: 0 0 2.5em 0;
+	padding: .35em 2em .43em 12em;
+	border-bottom: .4em solid #ffd200;
+}
+h1:before { /*BANNER*/
+	position:absolute;
+	left:.2em;
+	top:.4em;
+	width:96px;
+	height:96px;
+	background-image:url('https://rhchp.regis.edu/css/course_css/stylesheets/images/regis_shield.png');
+	content:' ';
+}
+
+h2, h3, h4, h5, h6 {
+	font-weight: bold;
+	color: #002b49;
+	padding: .25em .5em .25em .5em;
+	border-bottom: 1px solid #e7dba9;
+}
+
+h2 {
+	font-size: 1.25em;
+}
+
+h3 {
+	font-size: 1.15em;
+	/* color: #ffd200; */
+}
+
+h4 {
+	font-size: 1.05em;
+}
+
+h5 {
+	font-size: 0.95em;
+	/* color: #ffd200; */
+}
+
+h6 {
+	font-size: 0.85em;
+}
+
+p {
+	font-size: .875em;
+	padding: .25em .5em .25em .5em;
+}
+
+/* TEXT CLASSES */
+.jesuit{
+	margin-left: auto; margin-right: auto;
+	margin-top:20px; margin-bottom:20px;
+	width: 80%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	border-radius:.5em;
+	padding: .5em;
+	clear: both;
+	overflow: hidden;
+	font-size:1em;
+	font-weight:400;
+}
+.jesuit:before {
+	float: right;
+	content: url(https://rhchp.regis.edu/css/course_css/images/core/icon_jesuit.png);
+}
+
+.callout_right{
+	margin-left:20%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	font-size:1em;
+	font-weight:400;
+	margin-right:.5em;
+}
+
+.callout_left{
+	margin-right:20%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	font-size:1em;
+	font-weight:400;
+	margin-left:.5em;
+}
+
+.callout_center{
+	margin-left:10%;
+	margin-right:10%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	font-size:1em;
+	font-weight:400;
+}
+
+/* TABLES */
+tr:nth-child(odd){
+	 background-color:#e7dba9;
+}
+tr:nth-child(even){ 
+    background-color:#ffffff;
+}
+tr:hover{ 
+	background-color: #ffd200;
+}
+td, th{
+	padding: .5em .75em .5em .75em;
+	min-width: 3em;
+}
+th{
+	background-color:#002b49;
+	color:#ffffff;
+}
+
+/* LISTS */
+/*lists*/
+
+ul {
+	list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/bullet.gif');
+	padding-left:.5em;
+	list-style-position:inside;
+}
+ol  {
+	padding-left:.5em;
+	list-style-position:inside;
+}
+li {
+	padding:.5em 1em;
+	font-size: .875em;
+}
+/*code callout*/
+
+.code {
+	background-color: #e7dba9;
+	font-family: "Courier New", Courier, monospace;
+	font-size: small;
+	word-wrap: break-word;
+	white-space: pre;
+	padding: 1em;
+	border-radius: 1em;
+	border: 1px dotted #ffd200;
+	}
+/*accents*/
+.red  {color:#49002b;}
+.green {color: #2b4900;}
+.blue {color: #002b49;}
+</style>
+<!-- Slight styling changes, specific to the Regis College of Computer and Information Sciences  -->
+<style type="text/css">
+/* DOCUMENT BASICS*/
+html{
+	background: url(https://rhchp.regis.edu/css/course_css/images/core/background_triangle.jpg) #cccccc;
+	background-repeat: repeat;
+}
+html:after {
+	content: "© Regis University. All Rights Reserved.";
+	text-align: center;
+	font-size: .75em;
+	color: #002b49;
+	width:100%;
+	display:block;
+}
+
+body {
+	margin: 1em 0 2em 0;
+	padding-bottom:20px;
+	background-color:#FFFFFF;
+	line-height:1.4;
+	font-family: 'Open Sans', Arial, Helvetica, sans-serif;
+}
+
+/* STANDARD TEXT */
+h1 {
+	font-size: 1.25em;
+	font-weight: bold;
+	text-align: right;
+	color: white;
+	background-color: #000a29;
+	margin: 0 0 3em 0;
+	padding: .35em 2em .43em 19em;
+	border-bottom: .4em solid #f1552d;
+}
+h1 > img { /* BANNER */
+	position: absolute;
+	left: -.25em; top: .82em;
+}
+h1:before { /*BANNER*/
+	position:absolute;
+	left:-.25em;
+	top:.82em;
+	height:96px;
+	width:339px;
+	background-image:url('https://rhchp.regis.edu/css/course_css/stylesheets/images/header_ribbon.png');
+	content:' ';
+}
+h2, h3, h4, h5, h6 {
+	font-weight: 700;
+	color: #000a29;
+	padding: .5em .5em .35em .5em;
+}
+
+h2 {
+	font-size: 1.25em;
+    background-color: #dce1f1;
+    margin-top: 20px;
+    font-weight: 900;
+    border-bottom: 2px solid #f8b2a0;
+    border-radius: 5px 5px 0 0;
+}
+
+h3 {
+	font-size: 1.15em;
+	color: #fff;
+	background-color:#052648;
+	border-radius: 0 0 5px 5px;
+	margin-top: 10px;
+}
+
+h4 {
+	font-size: 1.05em;
+    margin-top: 5px;
+	border-bottom:1px solid #9b9ea7;
+}
+
+h5 {
+	font-size: 0.95em;
+	color: #f1552d;
+}
+
+h6 {
+	font-size: 0.85em;
+}
+
+p {
+	font-size: .875em;
+	padding: 1em .5em 1em .5em;
+}
+
+a,a:hover,a:visited {color:#002b49; text-decoration:underline;font-weight:bold;}
+
+/* TEXT CLASSES */
+.jesuit{
+	margin-left: auto; margin-right: auto;
+	margin-top:20px; margin-bottom:20px;
+	width: 80%;
+	background-color: #9AB3FF;
+	border: 1px solid #F8B2A0;
+	border-radius:.5em;
+	padding: .5em;
+	clear: both;
+	overflow: hidden;
+	font-size:1em;
+	font-weight:400;
+}
+.jesuit:before {
+	float: right;
+	content: url(https://rhchp.regis.edu/css/course_css/images/core/icon_jesuit.png);
+}
+
+.callout_right{
+	margin-left:20%;
+	background-color: #dce1f1;
+	border: 1px solid #F8B2A0;
+	font-size:1em;
+	font-weight:400;
+}
+
+.callout_left{
+	margin-right:20%;
+	margin-left:1em;
+	margin-bottom:2em;
+	background-color: #dce1f1;
+	border: 1px solid #F8B2A0;
+	border-left:1em solid #F8B2A0;
+	font-size:1em;
+	font-weight:400;
+}
+
+.callout_center{
+	margin-left:10%;
+	margin-right:10%;
+	background-color: #dce1f1;
+	border: 1px solid #F8B2A0;
+	font-size:1em;
+	font-weight:400;
+}
+
+.callout_center img.icon { position: relative; top: .5em; height: 30px; width:30px; margin-right: 10px;margin-left: 2px;}
+
+.center:not(table){
+	text-align:center;
+}
+.right:not(table){
+	text-align:right;
+}
+
+.callout-quote {
+	font-style: italic;
+	text-align: center;
+	background-image:url(images/core/quote_open.png), url(images/core/quote_close.png);
+	background-position: top left, bottom right;
+	background-repeat: no-repeat, no-repeat;
+	width: 50%;
+	border-top: 4px solid #186597;
+	border-bottom: 2px solid #b0aca2;
+	margin-left: auto;
+	margin-right: auto;
+	font-size: 90%;
+	background-color:#e6e4df;
+	-moz-box-shadow: 1px 1px 4px #b0aca2;
+	-webkit-box-shadow: 1px 1px 4px #b0aca2;
+	box-shadow: 1px 1px 4px #b0aca2;
+	/* For IE 8 */
+    -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#b0aca2')";
+}
+
+/* TABLES */
+tr:nth-child(odd){
+	 background-color:#ccc;
+}
+tr:nth-child(even){ 
+    background-color:#fff;
+}
+tr:hover{ 
+	background: #9AB3FF;
+}
+td, th{
+	padding: .5em .75em .5em .75em;
+	min-width: 3em;
+	vertical-align:top;
+}
+th{
+	background-color:#000a29;
+	color:white;
+}
+
+table.center{
+	margin-left:auto;
+	margin-right:auto;
+	max-width:90%;
+}
+
+/* LISTS */
+/*lists*/
+
+ul {
+	list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/bullet.gif');
+	padding-left:0;
+	list-style-position:outside;
+}
+ol , ul ol {
+	padding-left:2em;
+	list-style-position:outside;
+	list-style-type:decimal;
+	list-style-image:none;
+ }
+ol ol {
+	padding-left:2em;
+	list-style-position:outside;
+	list-style-type:lower-alpha;
+	list-style-image:none;
+ } 
+ol ol ol {
+	padding-left:2em;
+	list-style-position:outside;
+	list-style-type:lower-roman;
+	list-style-image:none;
+ } 
+ 
+li {
+	padding:.5em 1em;
+	font-size: .875em;
+}
+li li{
+	padding: .5em 0 .5em 0;
+	font-size: 1em;
+}
+li li:before{}
+li.jesuit {margin-left: 5px; background-color: #efefef;}
+/*code callout*/
+
+.code {
+	background-color: #efefef;
+	font-family:"Courier New",Courier,sans-serif;
+	font-size: small;
+	white-space: pre;
+	padding: 1em;
+	border-radius: 1em;
+	border: 1px dotted #333;
+	overflow:auto;
+}
+
+/*accents*/
+.red  {color:#49002b;}
+.green {color: #2b4900;}
+.blue {color: #002b49;}
+.orange{color:#F8B2A0; font-weight:bold;}
+</style>
+<!-- A few additional, custom styles for the Computer Science program within the Regis College of Computer and Information Sciences  -->
+<style type="text/css">
+/* DOCUMENT BASICS*/
+h1 {
+	border-bottom: .4em solid #839f54;
+}
+h1:before { /*BANNER*/
+	background-image:url('https://rhchp.regis.edu/css/course_css/stylesheets/images/header_ribbon_cs_green.png');
+}
+h1.no_image {text-align:left; padding-left:1em; margin:0 0 1em 0;}
+h1.no_image:before {background-image:none;}
+
+h2, h3, h4, h5, h6 {
+	background-color:transparent;
+	border-bottom: 0;
+	border-radius:0;
+}
+
+h2 {
+	font-size: 1.275em;
+	font-weight:900;
+	padding-left:.5em;
+}
+
+h3 {
+    font-size: 1.175em;
+	color: #506E1C;
+	padding-left:.75em;
+}
+
+h4 {
+	font-size: 1.075em;
+	padding-left:1em;
+}
+
+h5 {
+	font-size: .975em;
+	color: #506E1C;
+	padding-left:1.25em;
+}
+
+h6 {
+	font-size: .875em;
+	padding-left:1.5em;
+}
+
+p {
+	font-size: .875em;
+	padding: 1em .5em 1em 2em;
+}
+
+a,a:hover,a:visited {color:#002b49; text-decoration:underline;font-weight:bold;}
+
+/* TEXT CLASSES */
+
+.callout_right{
+	background-color: #9AB3FF;
+	border: 1px solid #839f54;
+}
+
+.callout_left{
+	background-color: #BAD3FF;
+	border: 1px solid #839f54;
+	border-left:1em solid #839f54;
+}
+
+.callout_center{
+	background-color: #9AB3FF;
+	border: 1px solid #839f54;
+}
+
+.indent{
+	padding-left:3.5em;
+}
+
+/* TABLES */
+.no_zebra tr:nth-child(odd){
+	 background-color:#fff;
+}
+.no_zebra tr:nth-child(even){ 
+    background-color:#fff;
+}
+.no_zebra tr:hover{ 
+	background: #fff;
+}
+
+/* LISTS */
+
+ul {
+	padding-left:3.5em;
+}
+ul ul {list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/green_bullet.gif');}
+ul ul ul {list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/smaller_bullet.gif');}
+
+ol  {
+	padding-left:3.5em;
+}
+li {
+	padding: .5em 0 .5em 0;
+	font-size: .875em;
+    margin-left: 0;
+}
+
+
+/*code callout*/
+.code {
+	margin-left:2em;
+}
+.code_courier {font-family:"Courier New",Courier,sans-serif;}
+
+/*accents*/
+.red  {color:#a5010c;}
+.green {color:#3d6c17;}
+.blue {color:#020a83;}
+.yellow{color:#ffff00;}
+.orange{color:#e66b0b;}
+.purple{color:#800080;}
+
+/*images*/
+.wrap_right{
+	float:right;
+	margin:0 0.5em;
+}
+.wrap_left{
+	float:right;
+	margin:0 0.5em;
+}
+</style>
+<!-- trace_table.css -->
+<style type="text/css">
+.interfaceWrapper {width:100%;}
+.rowWrapper {width:100%; border-bottom:1px solid #000; padding-bottom:0.5em; padding-top:0.5em; height:3em;}
+.rowWrapper:nth-child(even) {background-color:#eee;}
+.cellWrapper {text-align:center; float:left;}
+input[type="text"] {width:80%; margin-left:auto; margin-right:auto; background-color:#f1f1ae; text-align:center;}
+input[type="text"]:hover, input[type="text"]:focus {width:80%; margin-left:auto; margin-right:auto; background-color:#fff; text-align:center;}
+/*.answerButton {background-color:blue; float:left; border:1px solid black; margin-right:10px;}*/
+/*.answerButton:hover, .answerButton:focus {background-color:red; float:left; border:1px solid black; margin-right:10px;}*/
+.columnTitle {width:80%; margin-left:auto; margin-right:auto; float:left;}
+.feedbackP0 {border:2px solid #f48; float:left; width:35%; padding:4px;}
+.feedbackP1 {border:2px solid #5b7530; float:left; width:35%; padding:4px;}
+.check_immediately {float:left; border-radius:3px; border:1px solid #000; margin-right:10px;}
+.check_immediately:hover, .check_immediately:focus {background-color:black; color:white; border-radius:3px; border:1px solid #000; margin-right:10px;}
+.meta_buttons {width:100%; text-align:center; padding-top:1em;}
+.check_reset{margin-left:auto; margin-right:auto; border-radius:3px; border:1px solid #000;}
+.check_answers{margin-left:auto; margin-right:auto; border-radius:3px; border:1px solid #000;}
+.check_reset:hover, .check_reset:focus {margin-left:auto; margin-right:auto; border-radius:3px; border:1px solid #000; background-color:#000; color:#fff;}
+.check_answers:hover, .check_answers:focus {margin-left:auto; margin-right:auto; border-radius:3px; border:1px solid #000; background-color:#000; color:#fff;}
+
+.hidden {display:none;}
+</style>
+
+</head>
+<body>
+<h1>Trace Table</h1>
+<h2>Code fragments to trace:</h2>
+<pre>    Line# &nbsp; &nbsp;Code</pre>
+<pre class="code">1 &nbsp;&nbsp;&nbsp;&nbsp;   var1 = 10;<br /><br />2 &nbsp;&nbsp;&nbsp;&nbsp;   var2 = 2*var1;<br /><br />3 &nbsp;&nbsp;&nbsp;&nbsp;   var3 = var1+var2;<br /><br />4 &nbsp;&nbsp;&nbsp;&nbsp;   var1++;<br /><br />5 &nbsp;&nbsp;&nbsp;&nbsp;   var3 = sqrt(var2-var1)<br /><br />6        var4 = var1-var3;</pre>
+<h2>Trace table:</h2>
+<table>
+<tbody>
+<tr>
+<th scope="col">var1</th>
+<th scope="col">var2</th>
+<th scope="col">var3</th>
+<th scope="col">var4</th>
+<th scope="col">line#</th>
+<th scope="col">w/r<br />0/1</th>
+<th scope="col">feedback</th>
+</tr>
+<tr>
+<td>10</td>
+<td></td>
+<td></td>
+<td></td>
+<td>1</td>
+<td>1</td>
+<td>Good job!</td>
+</tr>
+<tr>
+<td></td>
+<td>20</td>
+<td></td>
+<td></td>
+<td>2</td>
+<td>1</td>
+<td>Well done!</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>30</td>
+<td></td>
+<td>3</td>
+<td>1</td>
+<td>Bravo!</td>
+</tr>
+<tr>
+<td>11</td>
+<td></td>
+<td></td>
+<td></td>
+<td>4</td>
+<td>1</td>
+<td>Indeed!</td>
+</tr>
+<tr>
+<td>12</td>
+<td></td>
+<td></td>
+<td></td>
+<td>4</td>
+<td>0</td>
+<td>Check the operator.</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>3</td>
+<td></td>
+<td>5</td>
+<td>1</td>
+<td>Top notch!</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td>8</td>
+<td>6</td>
+<td>1</td>
+<td>Woot!</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+</body>
+</html>

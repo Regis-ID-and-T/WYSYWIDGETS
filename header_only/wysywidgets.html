@@ -1,0 +1,1213 @@
+<!doctype html>
+<html lang="en-us">
+<head>
+<!-- WYSYWIDGETS.JS -->
+<script type="text/javascript">
+// FIND TABLES
+function findTableContent(){
+	var foundTables = document.getElementsByTagName("TABLE");
+	var interactiveType;
+	for (var i=0, iMAX=foundTables.length; i<iMAX; i++){
+		// CHECK TO SEE IF EACH TABLE HAS A CLASSNAME THAT RELATES TO A SPECIFIC BUILDER FUNCTION, IF YES, CALL THAT SPECIFIC BUILDER FUNCTION ON THAT TABLE
+		if(foundTables[i].className && (foundTables[i].className=="button_button" || foundTables[i].className=="button_tab" || foundTables[i].className=="inlineHyperlink" || foundTables[i].className=="tooltip" || foundTables[i].className=="multipleChoice" )){
+			interactiveType = foundTables[i].className.split("_")[0];
+			builder[interactiveType](foundTables[i]);
+		}
+	}
+	whichListener[whichListenerLoader]();
+}
+
+// REACT TO CLICK EVENTS ON INTERACTIVE ELEMENTS
+function clickedStuff(evnt){
+	// IF NO EVENT WAS PASSED DURING THE CLICK, USE AN EVENT THAT HAD BUBBLED TO THE WINDOW AS THE EVENT
+	if (!evnt){ var evnt = window.event;}
+	// FIND THE TARGET OF THE EVENT (.TARGET FOR FF ETC AND .SRCELEMENT FOR IE)
+	if (evnt.target){var clickedThis = evnt.target;}
+	else if (evnt.srcElement){var clickedThis = evnt.srcElement;}
+	// IN THE CASE WHERE A TEXT NODE WAS CLICKED, CHANGE THE EVENT TARGET TO THE PARENT OF THAT TEXT NODE
+	if (clickedThis.nodeType == 3){clickedThis = clickedThis.parentNode;} // http://www.quirksmode.org/js/events_properties.html safari hack;
+	// FOR KEYBOARD INTERACTION, DETERMINE WHICH KEY WAS PRESSED WHILE AN ELEMENT HAD FOCUS (.WHICH, .BUTTON, AND .KEYCODE ARE CHECKED, IN ORDER, TO FIND THE RIGHT KEY IN ALL MAJOR BROWSERS)
+	if(evnt.which){var keynum = evnt.which;}
+	else if(evnt.button){var keynum = evnt.button;}
+	else if(evnt.keyCode) {var keynum = evnt.keyCode;}
+	// DETERMINE IF A LEFT CLICK OCCURRED (KEYNUM 0 OR 1, BROWSER DEPENDENT) OR IF THE SPACE BAR (13) OR ENTER KEY (32) WERE PRESSED
+	if(keynum && (keynum == 0 || keynum == 1 || keynum == 13 || keynum == 32) && clickedThis.className){
+		// HARVEST THE FIRST PART OF THE CLICKED ELEMENT'S CLASSNAME
+		var interactiveType = clickedThis.className.split("_")[0];
+		// DETERMINE IF THE FIRST PART OF THE CLICKED ELEMENT'S CLASSNAME MATCHES AN EXPECTED CLASSNAME
+		if(interactiveType == "button" || interactiveType == "inlineHyperlink" || interactiveType == "tooltip" || interactiveType == "multipleChoice"){
+			// CALL THE APPROPRIATE SUB-FUNCTION OF THE DOSTUFF VARIABLE BASED ON THE INTERACTIVE TYPE (HARVESTED FROM THE ELEMENT'S CLASSNAME)
+			doStuff[interactiveType](clickedThis);
+		}
+	}
+}
+
+// REACT TO HOVER ACTION
+function hoveredStuff(evnt){
+	if (!evnt) var evnt = window.event;
+	if (evnt.target){var hoveredThis = evnt.target;}
+	else if (evnt.srcElement){var hoveredThis = evnt.srcElement;}
+	if (hoveredThis.nodeType == 3){hoveredThis = hoveredThis.parentNode;} // http://www.quirksmode.org/js/events_properties.html safari hack;
+	var hoverNum = prevSiblingCounter(hoveredThis);
+	hoverNum++;
+	document.getElementById("tooltip_target").innerHTML = hoveredThis.parentNode.nextSibling.getElementsByTagName("TR")[hoverNum].getElementsByTagName("TD")[2].innerHTML;
+	document.getElementById("tooltip_target").style.display="block";
+}
+function followMouse(evnt){
+	if (!evnt) var evnt = window.event;
+	if (evnt.target){var hoveredThis = evnt.target;}
+	else if (evnt.srcElement){var hoveredThis = evnt.srcElement;}
+	if (hoveredThis.nodeType == 3){hoveredThis = hoveredThis.parentNode;} // http://www.quirksmode.org/js/events_properties.html safari hack;
+	// determine window scroll position; cross-browser support from: https://developer.mozilla.org/en-US/docs/Web/API/Window/scrollY
+	var supportPageOffset = window.pageXOffset !== undefined;
+	var isCSS1Compat = ((document.compatMode || "") === "CSS1Compat");
+	var offX = supportPageOffset ? window.pageXOffset : isCSS1Compat ? document.documentElement.scrollLeft : document.body.scrollLeft;
+	var offY = supportPageOffset ? window.pageYOffset : isCSS1Compat ? document.documentElement.scrollTop : document.body.scrollTop;
+	// update the position of the hover box
+	document.getElementById("tooltip_target").style.top=evnt.clientY+offY+5 + "px";
+	document.getElementById("tooltip_target").style.left=evnt.clientX+offX+5 + "px";	
+}
+function closeTip(){
+	document.getElementById("tooltip_target").style.display="none";
+}
+
+// THE PREVSIBLINGCOUNTER FUNCTION RECEIVES A BUTTON ELEMENT AND DETERMINES THAT BUTTON ELEMENT'S NUMERIC POSITION IN ITS PARENT
+// THIS INFORMATION IS USED TO THEN PULL THE APPROPRIATE INFORMATION OUT OF THE TABLE THAT WAS USED TO BUILD THE BUTTON AND RESPONSE TEXT ELEMENTS
+function prevSiblingCounter(whichThat){
+	var thisType = whichThat.tagName;
+	var thisParent = whichThat.parentNode;
+    var theseKids = thisParent.getElementsByTagName(thisType);
+    for(var i=0, iMAX=theseKids.length; i<iMAX; i++){
+       if(theseKids[i] == whichThat){
+           return i;
+       }
+    }
+}
+
+// THIS GETOFFSET FUNCTION DETERMINES THE X AND Y COORDINATES OF ANY ELEMENT ON A PAGE, INSIDE OF AN IFRAME
+// THIS INFORMATION IS USED WHEN A USER USES THE KEYBOARD TO ACCESS A TOOLTIP
+function getOffset(docElem) {
+	// http://javascript.info/tutorial/coordinates
+	var box = docElem.getBoundingClientRect();
+	var body = document.body;
+	var scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
+    var scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft;
+	var clientTop = docElem.clientTop || body.clientTop || 0;
+    var clientLeft = docElem.clientLeft || body.clientLeft || 0;
+	var top  = box.top +  scrollTop - clientTop;
+    var left = box.left + scrollLeft - clientLeft;
+    return { top: Math.round(top), left: Math.round(left) };
+}
+
+
+
+// THE DOSTUFF VARIABLE CONTAINS WITHIN IT A SET OF FUNCTIONS THAT ADD INTERACTIVITY TO THE PAGE
+var doStuff = {
+	// THE BUTTON FUNCTION WILL UPDATE THE TEXT SEEN IN A TEXTTARGET DIV WHEN A BUTTON OR TAB IS CLICKED
+	button: function(thisButton){
+		// DETERMINE APPROPRIATE TABLE DATA BASED ON BUTTON POSITION
+		var buttonNum = prevSiblingCounter(thisButton);
+		buttonNum++;
+		// FIND APPROPRIATE TEXT TARGET
+		var textTargetDiv = thisButton.parentNode.parentNode.lastChild;
+		var sourceTD = thisButton.parentNode.parentNode.nextSibling.getElementsByTagName("TR")[buttonNum].getElementsByTagName("TD")[1];
+		textTargetDiv.innerHTML = sourceTD.innerHTML;
+		// SET THE CLASSES OF ALL BUTTONS IN THE GROUP TO notChosen
+		var changeClassButtons = thisButton.parentNode.children;
+		for (var bi=0, biMAX=changeClassButtons.length; bi<biMAX; bi++){
+			changeClassButtons[bi].className = changeClassButtons[bi].className.replace("chosen","notChosen");
+			changeClassButtons[bi].setAttribute("aria-selected","false");
+		}
+		// SET THE CLICKED BUTTON'S CLASS TO CHOSEN
+		thisButton.className = thisButton.className.replace("notChosen","chosen");
+		thisButton.setAttribute("aria-selected","true");
+		textTargetDiv.focus();
+	},
+	inlineHyperlink: function(thisSpan){
+		// DETERMINE WHETHER THISSPAN IS CHOSEN
+		if(thisSpan.className.split("_")[1] == "notChosen"){
+			thisSpan.nextSibling.className = "hiddenSpan";
+			thisSpan.nextSibling.focus();
+			thisSpan.className = "inlineHyperlink_chosen";
+		}
+		else {
+			thisSpan.nextSibling.className = "hiddenSpan hidden";
+			thisSpan.className = "inlineHyperlink_notChosen";
+		}
+	},
+	tooltip: function(thisSpan){
+		if(thisSpan.className=="tooltip_notHovered"){
+			var hoverNum = prevSiblingCounter(thisSpan);
+			hoverNum++;
+			document.getElementById("tooltip_target").innerHTML = thisSpan.parentNode.nextSibling.getElementsByTagName("TR")[hoverNum].getElementsByTagName("TD")[2].innerHTML;
+			document.getElementById("tooltip_target").style.left=getOffset(thisSpan).left + "px";
+			document.getElementById("tooltip_target").style.top=getOffset(thisSpan).top + "px";
+			document.getElementById("tooltip_target").style.display="block";
+			document.getElementById("tooltip_target").focus();
+			thisSpan.className = "tooltip_hovered";
+		}
+		else{
+			closeTip();
+			thisSpan.className = "tooltip_notHovered";
+		}
+	}
+};
+
+
+
+var tooltipTargetExists = 0;
+// THE BUILDER VARIABLE CONTAINS WITHIN IT A SET OF FUNCTIONS THAT PULL INFORMATION FROM TABLES IN ORDER TO GENERATE INTERACTIVE CONTENT
+var builder = {
+	button: function(thisTable){
+		// FIRST THING FIRST... HIDE THE DATA TABLES FROM THE USER SO THEY AREN'T SEEN NEXT TO THE INTERACTIVE COMPONENTS ON THE PAGE
+		thisTable.style.display="none";
+		// PULL THE SECONDARY TYPE VALUE FROM THE THISTABLE'S CLASSNAME IN ORDER TO DIFFERENTIATE BETWEEN THE REGULAR BUTTON LAYOUT AND THE TABBED BUTTON LAYOUT
+		var secondType = thisTable.className.split("_")[1];
+		// BEGIN BUILDING THE INTERACTIVE ELEMENTS
+		var button_wrapper = document.createElement("DIV");
+		button_wrapper.className = "button_wrapper_" + secondType;
+		button_wrapper.setAttribute("role", "tablist");
+		var target_text_wrapper = document.createElement("DIV");
+		// ALLOW THE TARGET_TEXT_WRAPPER TO RECEIVE FOCUS FROM KEYBOARD
+		target_text_wrapper.tabIndex = 0;
+		target_text_wrapper.className = "target_text_wrapper_" + secondType;
+		target_text_wrapper.setAttribute("role", "tabpanel");
+		// INITIALIZE SOME VARIABLES THAT WILL STORE INFORMATION FOUND IN THE THISTABLE
+		var checkVal, tableRows, buttonName, targetText, rowElements, thisButton, thisTargetText;
+		checkVal = 0;
+		// PULL ANY CONTENT FROM THISTABLE
+		// GET ALL OF THE ROWS FOUND IN THE TABLE
+		tableRows = thisTable.getElementsByTagName("TR");
+		// LOOP THROUGH THE TABLE ROWS, STARTING WITH THE SECOND ROW (BECAUSE THE FIRST ROW, ROW[0], IS THE HEADER ROW AND CONTAINS NO DATA)
+		for(var i=1, iMAX=tableRows.length; i<iMAX; i++){
+			// IN EVERY ROW LOOP, COLLECT ALL OF THE TD ELEMENTS
+			rowElements = tableRows[i].getElementsByTagName("TD");
+			// FROM THE FIRST TD ELEMENT IN EACH ROW, PULL THE BUTTON NAME
+			buttonName = rowElements[0].innerHTML;
+			// FROM THE SECOND TD ELEMENT IN EACH ROW, PULL THE TEXT TO BE USED IN THE TEXT TARGET
+			targetText = rowElements[1].innerHTML;
+			// DETERMINE WHETHER THERE IS SOME CONTENT IN THE TABLE, IF YES, GO AHEAD AND BUILD A RELATED INTERACTIVE ELEMENT
+			// HERE, IT IS ASSUMED THAT THE BUTTON NAME AND TARGETTEXT VALUES WILL ONLY BE EQUAL IF THEY ARE BOTH BLANK. UNLIKELY EDGE CASES WILL CAUSE PROBLEMS AKA BUTTON NAME = TEXT TO SHOW.
+			if(buttonName != targetText){
+				// CREATE A P ELEMENT THAT WILL FUNCTION AS A BUTTON
+				thisButton = document.createElement("P");
+				thisButton.tabIndex = 0;
+				thisButton.setAttribute("role", "tab");
+				// DETERMINE WHETHER WE ARE IN THE FIRST DATA ROW IN OUR LOOP, IF YES, THEN CHOOSE THIS ROW'S TARGET TEXT AS THE DEFAULT TEXT SHOWN IN THE TARGETTEXT DIV
+				if(checkVal == 0){
+					// PLACE TARGETTEXT INTO THE TARGET TEXT ELEMENT
+					target_text_wrapper.innerHTML = targetText;
+					// FURTHER, MAKE SURE THAT THE BUTTON ASSOCIATED WITH THIS FIRST ROW'S DATA IS SET TO THE CHOSEN CLASS.
+					thisButton.className = "button_" + secondType + "_chosen";
+					thisButton.setAttribute("aria-selected","true");
+				}
+				else {
+					// FOR ALL OTHER ROWS OF DATA, SET THE BUTTON TO THE NOTCHOSEN CLASS
+					thisButton.className = "button_" + secondType + "_notChosen";
+					thisButton.setAttribute("aria-selected","false");
+				}
+				// APPEND THE BUTTON NAME TO THE NEWLY CREATED P ELEMENT
+				thisButton.innerHTML = buttonName;
+				// APPEND THE BUTTON TO THE BUTTON WRAPPER
+				button_wrapper.appendChild(thisButton);
+				// UPDATE THE VALUE USED TO CONDITIONALLY DETERMINE WHETHER WE'RE IN THE FIRST LOOP
+				checkVal = 1;
+			}
+			else{
+				// WHEN AN ENTIRE ROW IS BLANK, GO AHEAD AND BUILD A P ELEMENT AND APPEND IT TO THE BUTTON WRAPPER SO AS TO MAINTAIN A RELATIONSHIP BETWEEN BUTTON POSITION AND TABLE ROW DATA
+				thisButton = document.createElement("P");
+				thisButton.className = "button_" + secondType + "_chosen";
+				thisButton.style.display = "none";
+				button_wrapper.appendChild(thisButton);
+			}
+			// CLEAR THE BUTTON NAME AND TARGET TEXT VALUES BEFORE THE NEXT LOOP
+			buttonName = targetText = "";
+			rowElements.length = 0;
+		}
+		// AT THE END OF THE LOOP THROUGH THE THISTABLE'S ROWS, INSERT THE BUTTON WRAPPER AND TEXT TARGET INTO THE BUTTON AND TARGET WRAPPER, THEN PLACE THE BUTTON AND TARGET WRAPPER INTO THE PAGE JUST BEFORE THE POSITION OF THISTABLE SO THAT IT IS EASY FOR THE CLICK BASED INTERACTIVE DOSTUFF FUNCTION TO FIND THE APPROPRIATE TABLE DATA WITHOUT ANY NEED FOR ELEMENT IDS
+		if(checkVal == 1){
+			var button_and_text_wrapper = document.createElement("DIV");
+			button_and_text_wrapper.className = "button_and_target_wrapper_" + secondType + " clearfix";
+			button_and_text_wrapper.setAttribute("role", "application");
+			button_and_text_wrapper.appendChild(button_wrapper);
+			button_and_text_wrapper.appendChild(target_text_wrapper);
+			thisTable.parentNode.insertBefore(button_and_text_wrapper, thisTable);
+		}
+		// CLEAR THE TABLE ROWS ARRAY
+		tableRows.length = 0;
+	},
+	inlineHyperlink: function(thisTable){
+		// FIRST THING FIRST... HIDE THE DATA TABLES FROM THE USER SO THEY AREN'T SEEN NEXT TO THE INTERACTIVE COMPONENTS ON THE PAGE
+		thisTable.style.display="none";
+		// CREATE A P ELEMENT THAT WILL HOLD REGULAR TEXT, THE CLICKABLE SPAN, AND THE HIDDEN TEXT/CONTENT
+		var thisP = document.createElement("P");
+		var checkVal, tableRows, rowElements;
+		checkVal = 0;
+		var preText = [0], activeText = [0], hiddenContent = [0], postText = [0], visibleSpan = [0], hiddenSpan = [0];
+		// PULL ANY CONTENT FROM THISTABLE
+		// GET ALL OF THE ROWS FOUND IN THE TABLE
+		tableRows = thisTable.getElementsByTagName("TR");
+		// LOOP THROUGH THE TABLE ROWS, STARTING WITH THE SECOND ROW (BECAUSE THE FIRST ROW, ROW[0], IS THE HEADER ROW AND CONTAINS NO DATA)
+		for(var i=1, iMAX=tableRows.length; i<iMAX; i++){
+			// IN EVERY ROW LOOP, COLLECT ALL OF THE TD ELEMENTS
+			rowElements = tableRows[i].getElementsByTagName("TD");
+			// FROM THE FIRST TD ELEMENT IN EACH ROW, PULL ANY TEXT TO BE USED IN THE PRETEXT
+			preText[i] = rowElements[0].innerHTML;
+			// FROM THE SECOND TD ELEMENT IN EACH ROW, PULL THE TEXT TO BE USED IN THE ACTIVE SPAN
+			activeText[i] = rowElements[1].innerHTML;
+			// FROM THE THIRD TD ELEMENT IN EACH ROW, PULL THE TEXT TO BE USED IN THE HIDDEN SPAN
+			hiddenContent[i] = rowElements[2].innerHTML;
+			// FROM THE FOURTH TD ELEMENT IN EACH ROW, PULL ANY TEXT TO BE USED IN THE POSTTEXT
+			postText[i] = rowElements[3].innerHTML;
+			// DETERMINE WHETHER THERE IS SOME CONTENT IN THE TABLE, IF YES, GO AHEAD AND BUILD A RELATED INTERACTIVE ELEMENT
+			// HERE, IT IS ASSUMED THAT THE BUTTON NAME AND TARGETTEXT VALUES WILL ONLY BE EQUAL IF THEY ARE BOTH BLANK. UNLIKELY EDGE CASES WILL CAUSE PROBLEMS AKA BUTTON NAME = TEXT TO SHOW.
+			if(preText[i] != "" || activeText[i] != "" || hiddenContent[i] != "" || postText[i] != ""){
+				// CREATE A SPAN ELEMENT THAT WILL BE CLICKABLE
+				visibleSpan[i] = document.createElement("SPAN");
+				visibleSpan[i].tabIndex = 0;
+				visibleSpan[i].className = "inlineHyperlink_notChosen";
+				// CREATE A SPAN ELEMENT THAT WILL CONTAIN THE HIDDEN TEXT/CONTENT
+				hiddenSpan[i] = document.createElement("SPAN");
+				hiddenSpan[i].tabIndex = 0;
+				hiddenSpan[i].className = "hiddenSpan hidden";
+				visibleSpan[i].innerHTML = " " + activeText[i] + " ";
+				hiddenSpan[i].innerHTML = " " + hiddenContent[i] + " ";
+				thisP.innerHTML += preText[i]; thisP.appendChild(visibleSpan[i]); thisP.appendChild(hiddenSpan[i]); thisP.innerHTML += postText[i];
+				checkVal = 1;
+			}
+		}
+		// AT THE END OF THE LOOP THROUGH THE THISTABLE'S ROWS, INSERT THE BUTTON WRAPPER AND TEXT TARGET INTO THE BUTTON AND TARGET WRAPPER, THEN PLACE THE BUTTON AND TARGET WRAPPER INTO THE PAGE JUST BEFORE THE POSITION OF THISTABLE SO THAT IT IS EASY FOR THE CLICK BASED INTERACTIVE DOSTUFF FUNCTION TO FIND THE APPROPRIATE TABLE DATA WITHOUT ANY NEED FOR ELEMENT IDS
+		if(checkVal == 1){
+			thisTable.parentNode.insertBefore(thisP, thisTable);
+		}
+		// CLEAR THE TABLE ROWS ARRAY
+		tableRows.length = 0;
+	},
+	tooltip: function(thisTable){
+		// FIRST THING FIRST... HIDE THE DATA TABLES FROM THE USER SO THEY AREN'T SEEN NEXT TO THE INTERACTIVE COMPONENTS ON THE PAGE
+		thisTable.style.display="none";
+		// CREATE A P ELEMENT THAT WILL HOLD REGULAR TEXT, THE CLICKABLE SPAN, AND THE HIDDEN TEXT/CONTENT
+		var thisP = document.createElement("P");
+		var checkVal, tableRows, rowElements;
+		checkVal = 0;
+		var preText = [0], activeText = [0], postText = [0], visibleSpan = [0];
+		// PULL ANY CONTENT FROM THISTABLE
+		// GET ALL OF THE ROWS FOUND IN THE TABLE
+		tableRows = thisTable.getElementsByTagName("TR");
+		// LOOP THROUGH THE TABLE ROWS, STARTING WITH THE SECOND ROW (BECAUSE THE FIRST ROW, ROW[0], IS THE HEADER ROW AND CONTAINS NO DATA)
+		for(var i=1, iMAX=tableRows.length; i<iMAX; i++){
+			// IN EVERY ROW LOOP, COLLECT ALL OF THE TD ELEMENTS
+			rowElements = tableRows[i].getElementsByTagName("TD");
+			// FROM THE FIRST TD ELEMENT IN EACH ROW, PULL ANY TEXT TO BE USED IN THE PRETEXT
+			preText[i] = rowElements[0].innerHTML;
+			// FROM THE SECOND TD ELEMENT IN EACH ROW, PULL THE TEXT TO BE USED IN THE ACTIVE SPAN
+			activeText[i] = rowElements[1].innerHTML;
+			// FROM THE FOURTH TD ELEMENT IN EACH ROW, PULL ANY TEXT TO BE USED IN THE POSTTEXT
+			postText[i] = rowElements[3].innerHTML;
+			// DETERMINE WHETHER THERE IS SOME CONTENT IN THE TABLE, IF YES, GO AHEAD AND BUILD A RELATED INTERACTIVE ELEMENT
+			// HERE, IT IS ASSUMED THAT THE BUTTON NAME AND TARGETTEXT VALUES WILL ONLY BE EQUAL IF THEY ARE BOTH BLANK. UNLIKELY EDGE CASES WILL CAUSE PROBLEMS AKA BUTTON NAME = TEXT TO SHOW.
+			if(preText[i] != "" || activeText[i] != "" || postText[i] != ""){
+				// CREATE A SPAN ELEMENT THAT WILL BE CLICKABLE
+				visibleSpan[i] = document.createElement("SPAN");
+				visibleSpan[i].tabIndex = 0;
+				visibleSpan[i].className = "tooltip_notHovered";
+				visibleSpan[i].innerHTML = " " + activeText[i] + " ";
+				thisP.innerHTML += preText[i]; thisP.appendChild(visibleSpan[i]); thisP.innerHTML += postText[i];
+				checkVal = 1; tooltipTargetExists++;
+			}
+		}
+		// AT THE END OF THE LOOP THROUGH THE THISTABLE'S ROWS, INSERT THE BUTTON WRAPPER AND TEXT TARGET INTO THE BUTTON AND TARGET WRAPPER, THEN PLACE THE BUTTON AND TARGET WRAPPER INTO THE PAGE JUST BEFORE THE POSITION OF THISTABLE SO THAT IT IS EASY FOR THE CLICK BASED INTERACTIVE DOSTUFF FUNCTION TO FIND THE APPROPRIATE TABLE DATA WITHOUT ANY NEED FOR ELEMENT IDS
+		if(checkVal == 1){
+			thisTable.parentNode.insertBefore(thisP, thisTable);
+		}
+		// CLEAR THE TABLE ROWS ARRAY
+		tableRows.length = 0;
+		
+		
+		if(tooltipTargetExists == 1){
+			// BUILD THE FLOATING TOOLTIP TARGET DIV
+			var toolTipTargetDiv = document.createElement("DIV");
+			toolTipTargetDiv.id = "tooltip_target";
+			toolTipTargetDiv.style.display = "none";
+			toolTipTargetDiv.style.left = "-200px";
+			toolTipTargetDiv.style.top = "-200px";
+			toolTipTargetDiv.tabIndex = 0;
+			document.body.appendChild(toolTipTargetDiv);
+		}
+		
+	},
+	multipleChoice: function(thisTable){},
+};
+
+// TOOLTIP BUILDER
+
+// MULTIPLE-CHOICE BUILDER
+
+
+// LISTENER LOADERS
+var whichListenerLoader = "newListener";
+
+var whichListener = {
+	newListener: function(nothing) {
+		var allPs = document.getElementsByTagName("P");
+		for(var i=0; i<allPs.length; i++){
+			if(allPs[i].className && (allPs[i].className.indexOf("chosen")>=0 || allPs[i].className.indexOf("notChosen")>=0)){
+				allPs[i].addEventListener ('mouseup', clickedStuff, false);
+				allPs[i].addEventListener ('keyup', clickedStuff, false);
+			}
+		}
+		var allSpans = document.getElementsByTagName("SPAN");
+		for(var i=0; i<allSpans.length; i++){
+			if(allSpans[i].className && (allSpans[i].className.indexOf("chosen")>=0 || allSpans[i].className.indexOf("notChosen")>=0)){
+				allSpans[i].addEventListener ('mouseup', clickedStuff, false);
+				allSpans[i].addEventListener ('keyup', clickedStuff, false);
+			}
+			else if(allSpans[i].className && (allSpans[i].className.indexOf("hovered")>=0 || allSpans[i].className.indexOf("notHovered")>=0)){
+				allSpans[i].addEventListener ('mouseover', hoveredStuff, false);
+				allSpans[i].addEventListener ('mousemove', followMouse, false);
+				allSpans[i].addEventListener ('mouseout', closeTip, false);
+				allSpans[i].addEventListener ('mouseup', clickedStuff, false);
+				allSpans[i].addEventListener ('keyup', clickedStuff, false);
+			}
+		}
+	},
+	oldListener: function(nothing) {
+		var allPs = document.getElementsByTagName("P");
+		for(var i=0; i<allPs.length; i++){
+			if(allPs[i].className  && (allPs[i].className.indexOf("chosen")>=0 || allPs[i].className.indexOf("notChosen")>=0)){
+				allPs[i].attachEvent ('onmouseup', clickedStuff);
+				allPs[i].attachEvent ('onkeyup', clickedStuff);
+			}
+		}
+		var allSpans = document.getElementsByTagName("SPAN");
+		for(var i=0; i<allSpans.length; i++){
+			if(allSpans[i].className  && (allSpans[i].className.indexOf("chosen")>=0 || allSpans[i].className.indexOf("notChosen")>=0)){
+				allSpans[i].attachEvent ('onmouseup', clickedStuff);
+				allSpans[i].attachEvent ('onkeyup', clickedStuff);
+			}
+			else if(allSpans[i].className && (allSpans[i].className.indexOf("hovered")>=0 || allSpans[i].className.indexOf("notHovered")>=0)){
+				allSpans[i].attachEvent ('onmouseover', hoveredStuff, false);
+				allSpans[i].attachEvent ('onmousemove', followMouse, false);
+				allSpans[i].attachEvent ('onmouseout', closeTip, false);
+				allSpans[i].attachEvent ('onmouseup', clickedStuff);
+				allSpans[i].attachEvent ('onkeyup', clickedStuff);
+			}
+		}
+	}
+};
+
+// DETERMINE WHICH EVENT LISTENERS TO USE && LOAD CONTENT FROM DATA TABLES
+if(document.addEventListener){
+	document.addEventListener('DOMContentLoaded', function () {
+		whichListenerLoader = "newListener";
+		// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+		findTableContent();
+	});
+}
+else if(document.attachEvent){
+	document.attachEvent('onreadystatechange', function(){
+		if ( document.readyState === 'complete' ) {
+			whichListenerLoader = "oldListener";
+			// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+			findTableContent();
+		}
+	});
+}
+else if (window.addEventListener){
+	window.addEventListener('load', function () {
+		whichListenerLoader = "newListener";
+		// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+		findTableContent();
+	});
+}
+else if (window.attachEvent){
+	window.attachEvent('onload', function () {
+		whichListenerLoader = "oldListener";
+		// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+		findTableContent();
+	});
+}
+else {
+	var fn = window.onload;
+	window.onload = function() {
+		fn && fn();
+		alert('This site will not function correctly using your current browser, please try the newest browser available to you.');
+	}
+}
+
+// THIS SCRIPT WILL MAKE INVISIBLE THE VERTICAL LINE THAT SHOWS UP AT THE END OF EACH BIT OF MATHJAX AS OF 03/28/2016
+var globalTimeout;
+globalTimeout = setTimeout(checkJax,1000);
+function checkJax(){
+	if(document.getElementById("MathJax_Message")){
+		MathJax.Hub.Startup.signal.Interest(
+			function (message) {
+				if (message == "End"){
+					var theseNOBR = document.getElementsByTagName("NOBR");
+					for(var i=0, iMAX = theseNOBR.length; i<iMAX; i++){
+					    theseNOBR[i].childNodes[0].lastChild.style.borderLeftColor="transparent";
+					}
+					clearTimeout(globalTimeout);
+				}
+			}
+		);
+	}
+	else{
+		globalTimeout = setTimeout(checkJax,1000);
+	}
+}
+</script>
+<!-- OPEN SANS CSS (USED BY REGIS FOR FONTS) -->
+<style type='text/css'>
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/K88pR3goAWT7BTt32Z01mxJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+20B4, U+2DE0-2DFF, U+A640-A69F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/RjgO7rYTmqiVp7vzi-Q5URJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/LWCjsQkB6EMdfHrEVqA1KRJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/xozscpT2726on7jbcb_pAhJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0370-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/59ZRklaO5bWGqF5A9baEERJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/u-WUoqrET9fUeobQW7jkRRJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0100-024F, U+1E00-1EFF, U+20A0-20AB, U+20AD-20CF, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/cJZKeOuBrn4kERxqtaUH3VtXRa8TVwTICgirnJhmVJw.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+
+</style>
+<!-- Normalize, reset, clearfix (used for cross-browser similarity)  -->
+<style type="text/css">
+/* box model normalization */ *,*:before,*:after{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}
+/* reset */html,body,div,applet,object,iframe, h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,span,img,dl,dt,dd,ol,ul,li,fieldset,form,label,legend{margin:0;padding:0;border:0;outline:0;font-size:100%;font-weight:normal;background:transparent;}body{line-height:1.4;}ul{list-style:none;}blockquote,q{quotes:none;}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none;}:focus{outline:0;}button a,button a:hover,button a:visited{color:#000000;text-decoration:none;}
+/*! normalize.css v3.0.3 | MIT License | github.com/necolas/normalize.css */html{font-family:'Open Sans', Arial, Helvetica, sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}article,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block;vertical-align:baseline}audio:not([controls]){display:none;height:0}[hidden],template{display:none}a{background-color:transparent}a:active,a:hover{outline:0}abbr[title]{border-bottom:1px dotted}b,strong{font-weight:bold}dfn{font-style:italic}mark{background:#ff0;color:#000}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sup{top:-0.5em}sub{bottom:-0.25em}svg:not(:root){overflow:hidden}figure{margin:1em 40px}hr{height:0}pre{overflow:auto}code,kbd,pre,samp{font-family:monospace,monospace;}button,input,optgroup,select,textarea{color:inherit;font:inherit;margin:0}button{overflow:visible}button,select{text-transform:none}button,html input[type="button"],input[type="reset"],input[type="submit"]{-webkit-appearance:button;cursor:pointer}button[disabled],html input[disabled]{cursor:default}button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}input{line-height:normal}input[type="checkbox"],input[type="radio"]{padding:0}input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{height:auto}input[type="search"]{-webkit-appearance:textfield;}input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance:none}textarea{overflow:auto}optgroup{font-weight:bold}table{border-collapse:collapse;border-spacing:0}td,th{padding:0}
+/* clearfix */.clearfix{overflow:hidden; zoom:1;}.clearfix:before,.clearfix:after{content:''; display:table;}.clearfix:after {clear:both;}
+</style>
+<!--  Default styles for all Regis university courses -->
+<style type="text/css">
+/* DOCUMENT BASICS*/
+html{
+	background: url(https://rhchp.regis.edu/css/course_css/images/core/background_triangle.jpg) #cccccc;
+	background-repeat: repeat;
+	font-family:'Open Sans', Arial, Helvetica, sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;
+}
+html:after {
+	content: "© Regis University. All Rights Reserved.";
+	text-align: center;
+	font-size: .75em;
+	color: #002b49;
+	width:100%;
+	display:block;
+}
+
+body {
+	margin: .5em .25em 2em .25em;
+	padding-bottom:20px;
+	background-color:#FFFFFF;
+}
+
+/* STANDARD TEXT */
+h1 {
+	font-size: 1.25em;
+	font-weight: bold;
+	text-align: right;
+	color: white;
+	background-color: #002b49;
+	margin: 0 0 2.5em 0;
+	padding: .35em 2em .43em 12em;
+	border-bottom: .4em solid #ffd200;
+}
+h1:before { /*BANNER*/
+	position:absolute;
+	left:.2em;
+	top:.4em;
+	width:96px;
+	height:96px;
+	background-image:url('https://rhchp.regis.edu/css/course_css/stylesheets/images/regis_shield.png');
+	content:' ';
+}
+
+h2, h3, h4, h5, h6 {
+	font-weight: bold;
+	color: #002b49;
+	padding: .25em .5em .25em .5em;
+	border-bottom: 1px solid #e7dba9;
+}
+
+h2 {
+	font-size: 1.25em;
+}
+
+h3 {
+	font-size: 1.15em;
+	/* color: #ffd200; */
+}
+
+h4 {
+	font-size: 1.05em;
+}
+
+h5 {
+	font-size: 0.95em;
+	/* color: #ffd200; */
+}
+
+h6 {
+	font-size: 0.85em;
+}
+
+p {
+	font-size: .875em;
+	padding: .25em .5em .25em .5em;
+}
+
+/* TEXT CLASSES */
+.jesuit{
+	margin-left: auto; margin-right: auto;
+	margin-top:20px; margin-bottom:20px;
+	width: 80%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	border-radius:.5em;
+	padding: .5em;
+	clear: both;
+	overflow: hidden;
+	font-size:1em;
+	font-weight:400;
+}
+.jesuit:before {
+	float: right;
+	content: url(https://rhchp.regis.edu/css/course_css/images/core/icon_jesuit.png);
+}
+
+.callout_right{
+	margin-left:20%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	font-size:1em;
+	font-weight:400;
+	margin-right:.5em;
+}
+
+.callout_left{
+	margin-right:20%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	font-size:1em;
+	font-weight:400;
+	margin-left:.5em;
+}
+
+.callout_center{
+	margin-left:10%;
+	margin-right:10%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	font-size:1em;
+	font-weight:400;
+}
+
+/* TABLES */
+tr:nth-child(odd){
+	 background-color:#e7dba9;
+}
+tr:nth-child(even){ 
+    background-color:#ffffff;
+}
+tr:hover{ 
+	background-color: #ffd200;
+}
+td, th{
+	padding: .5em .75em .5em .75em;
+	min-width: 3em;
+}
+th{
+	background-color:#002b49;
+	color:#ffffff;
+}
+
+/* LISTS */
+/*lists*/
+
+ul {
+	list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/bullet.gif');
+	padding-left:.5em;
+	list-style-position:inside;
+}
+ol  {
+	padding-left:.5em;
+	list-style-position:inside;
+}
+li {
+	padding:.5em 1em;
+	font-size: .875em;
+}
+/*code callout*/
+
+.code {
+	background-color: #e7dba9;
+	font-family: "Courier New", Courier, monospace;
+	font-size: small;
+	word-wrap: break-word;
+	white-space: pre;
+	padding: 1em;
+	border-radius: 1em;
+	border: 1px dotted #ffd200;
+	}
+/*accents*/
+.red  {color:#49002b;}
+.green {color: #2b4900;}
+.blue {color: #002b49;}
+</style>
+<!-- Slight styling changes, specific to the Regis College of Computer and Information Sciences  -->
+<style type="text/css">
+/* DOCUMENT BASICS*/
+html{
+	background: url(https://rhchp.regis.edu/css/course_css/images/core/background_triangle.jpg) #cccccc;
+	background-repeat: repeat;
+}
+html:after {
+	content: "© Regis University. All Rights Reserved.";
+	text-align: center;
+	font-size: .75em;
+	color: #002b49;
+	width:100%;
+	display:block;
+}
+
+body {
+	margin: 1em 0 2em 0;
+	padding-bottom:20px;
+	background-color:#FFFFFF;
+	line-height:1.4;
+	font-family: 'Open Sans', Arial, Helvetica, sans-serif;
+}
+
+/* STANDARD TEXT */
+h1 {
+	font-size: 1.25em;
+	font-weight: bold;
+	text-align: right;
+	color: white;
+	background-color: #000a29;
+	margin: 0 0 3em 0;
+	padding: .35em 2em .43em 19em;
+	border-bottom: .4em solid #f1552d;
+}
+h1 > img { /* BANNER */
+	position: absolute;
+	left: -.25em; top: .82em;
+}
+h1:before { /*BANNER*/
+	position:absolute;
+	left:-.25em;
+	top:.82em;
+	height:96px;
+	width:339px;
+	background-image:url('https://rhchp.regis.edu/css/course_css/stylesheets/images/header_ribbon.png');
+	content:' ';
+}
+h2, h3, h4, h5, h6 {
+	font-weight: 700;
+	color: #000a29;
+	padding: .5em .5em .35em .5em;
+}
+
+h2 {
+	font-size: 1.25em;
+    background-color: #dce1f1;
+    margin-top: 20px;
+    font-weight: 900;
+    border-bottom: 2px solid #f8b2a0;
+    border-radius: 5px 5px 0 0;
+}
+
+h3 {
+	font-size: 1.15em;
+	color: #fff;
+	background-color:#052648;
+	border-radius: 0 0 5px 5px;
+	margin-top: 10px;
+}
+
+h4 {
+	font-size: 1.05em;
+    margin-top: 5px;
+	border-bottom:1px solid #9b9ea7;
+}
+
+h5 {
+	font-size: 0.95em;
+	color: #f1552d;
+}
+
+h6 {
+	font-size: 0.85em;
+}
+
+p {
+	font-size: .875em;
+	padding: 1em .5em 1em .5em;
+}
+
+a,a:hover,a:visited {color:#002b49; text-decoration:underline;font-weight:bold;}
+
+/* TEXT CLASSES */
+.jesuit{
+	margin-left: auto; margin-right: auto;
+	margin-top:20px; margin-bottom:20px;
+	width: 80%;
+	background-color: #9AB3FF;
+	border: 1px solid #F8B2A0;
+	border-radius:.5em;
+	padding: .5em;
+	clear: both;
+	overflow: hidden;
+	font-size:1em;
+	font-weight:400;
+}
+.jesuit:before {
+	float: right;
+	content: url(https://rhchp.regis.edu/css/course_css/images/core/icon_jesuit.png);
+}
+
+.callout_right{
+	margin-left:20%;
+	background-color: #dce1f1;
+	border: 1px solid #F8B2A0;
+	font-size:1em;
+	font-weight:400;
+}
+
+.callout_left{
+	margin-right:20%;
+	margin-left:1em;
+	margin-bottom:2em;
+	background-color: #dce1f1;
+	border: 1px solid #F8B2A0;
+	border-left:1em solid #F8B2A0;
+	font-size:1em;
+	font-weight:400;
+}
+
+.callout_center{
+	margin-left:10%;
+	margin-right:10%;
+	background-color: #dce1f1;
+	border: 1px solid #F8B2A0;
+	font-size:1em;
+	font-weight:400;
+}
+
+.callout_center img.icon { position: relative; top: .5em; height: 30px; width:30px; margin-right: 10px;margin-left: 2px;}
+
+.center:not(table){
+	text-align:center;
+}
+.right:not(table){
+	text-align:right;
+}
+
+.callout-quote {
+	font-style: italic;
+	text-align: center;
+	background-image:url(images/core/quote_open.png), url(images/core/quote_close.png);
+	background-position: top left, bottom right;
+	background-repeat: no-repeat, no-repeat;
+	width: 50%;
+	border-top: 4px solid #186597;
+	border-bottom: 2px solid #b0aca2;
+	margin-left: auto;
+	margin-right: auto;
+	font-size: 90%;
+	background-color:#e6e4df;
+	-moz-box-shadow: 1px 1px 4px #b0aca2;
+	-webkit-box-shadow: 1px 1px 4px #b0aca2;
+	box-shadow: 1px 1px 4px #b0aca2;
+	/* For IE 8 */
+    -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#b0aca2')";
+}
+
+/* TABLES */
+tr:nth-child(odd){
+	 background-color:#ccc;
+}
+tr:nth-child(even){ 
+    background-color:#fff;
+}
+tr:hover{ 
+	background: #9AB3FF;
+}
+td, th{
+	padding: .5em .75em .5em .75em;
+	min-width: 3em;
+	vertical-align:top;
+}
+th{
+	background-color:#000a29;
+	color:white;
+}
+
+table.center{
+	margin-left:auto;
+	margin-right:auto;
+	max-width:90%;
+}
+
+/* LISTS */
+/*lists*/
+
+ul {
+	list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/bullet.gif');
+	padding-left:0;
+	list-style-position:outside;
+}
+ol , ul ol {
+	padding-left:2em;
+	list-style-position:outside;
+	list-style-type:decimal;
+	list-style-image:none;
+ }
+ol ol {
+	padding-left:2em;
+	list-style-position:outside;
+	list-style-type:lower-alpha;
+	list-style-image:none;
+ } 
+ol ol ol {
+	padding-left:2em;
+	list-style-position:outside;
+	list-style-type:lower-roman;
+	list-style-image:none;
+ } 
+ 
+li {
+	padding:.5em 1em;
+	font-size: .875em;
+}
+li li{
+	padding: .5em 0 .5em 0;
+	font-size: 1em;
+}
+li li:before{}
+li.jesuit {margin-left: 5px; background-color: #efefef;}
+/*code callout*/
+
+.code {
+	background-color: #efefef;
+	font-family:"Courier New",Courier,sans-serif;
+	font-size: small;
+	white-space: pre;
+	padding: 1em;
+	border-radius: 1em;
+	border: 1px dotted #333;
+	overflow:auto;
+}
+
+/*accents*/
+.red  {color:#49002b;}
+.green {color: #2b4900;}
+.blue {color: #002b49;}
+.orange{color:#F8B2A0; font-weight:bold;}
+</style>
+<!-- A few additional, custom styles for the Computer Science program within the Regis College of Computer and Information Sciences  -->
+<style type="text/css">
+/* DOCUMENT BASICS*/
+h1 {
+	border-bottom: .4em solid #839f54;
+}
+h1:before { /*BANNER*/
+	background-image:url('https://rhchp.regis.edu/css/course_css/stylesheets/images/header_ribbon_cs_green.png');
+}
+h1.no_image {text-align:left; padding-left:1em; margin:0 0 1em 0;}
+h1.no_image:before {background-image:none;}
+
+h2, h3, h4, h5, h6 {
+	background-color:transparent;
+	border-bottom: 0;
+	border-radius:0;
+}
+
+h2 {
+	font-size: 1.275em;
+	font-weight:900;
+	padding-left:.5em;
+}
+
+h3 {
+    font-size: 1.175em;
+	color: #506E1C;
+	padding-left:.75em;
+}
+
+h4 {
+	font-size: 1.075em;
+	padding-left:1em;
+}
+
+h5 {
+	font-size: .975em;
+	color: #506E1C;
+	padding-left:1.25em;
+}
+
+h6 {
+	font-size: .875em;
+	padding-left:1.5em;
+}
+
+p {
+	font-size: .875em;
+	padding: 1em .5em 1em 2em;
+}
+
+a,a:hover,a:visited {color:#002b49; text-decoration:underline;font-weight:bold;}
+
+/* TEXT CLASSES */
+
+.callout_right{
+	background-color: #9AB3FF;
+	border: 1px solid #839f54;
+}
+
+.callout_left{
+	background-color: #BAD3FF;
+	border: 1px solid #839f54;
+	border-left:1em solid #839f54;
+}
+
+.callout_center{
+	background-color: #9AB3FF;
+	border: 1px solid #839f54;
+}
+
+.indent{
+	padding-left:3.5em;
+}
+
+/* TABLES */
+.no_zebra tr:nth-child(odd){
+	 background-color:#fff;
+}
+.no_zebra tr:nth-child(even){ 
+    background-color:#fff;
+}
+.no_zebra tr:hover{ 
+	background: #fff;
+}
+
+/* LISTS */
+
+ul {
+	padding-left:3.5em;
+}
+ul ul {list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/green_bullet.gif');}
+ul ul ul {list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/smaller_bullet.gif');}
+
+ol  {
+	padding-left:3.5em;
+}
+li {
+	padding: .5em 0 .5em 0;
+	font-size: .875em;
+    margin-left: 0;
+}
+
+
+/*code callout*/
+.code {
+	margin-left:2em;
+}
+.code_courier {font-family:"Courier New",Courier,sans-serif;}
+
+/*accents*/
+.red  {color:#a5010c;}
+.green {color:#3d6c17;}
+.blue {color:#020a83;}
+.yellow{color:#ffff00;}
+.orange{color:#e66b0b;}
+.purple{color:#800080;}
+
+/*images*/
+.wrap_right{
+	float:right;
+	margin:0 0.5em;
+}
+.wrap_left{
+	float:right;
+	margin:0 0.5em;
+}
+</style>
+
+<!-- WYSYWIDGET CSS -->
+<style type="text/css">
+.button_and_target_wrapper_button{margin-left:auto; margin-right:auto; width:80%; padding:10px; background-color:#ddd;}
+.button_wrapper_button{width:35%; float:left; overflow:hidden;}
+.target_text_wrapper_button{width:62%; float:right; background-color:#bbb; border-radius:5px; overflow:hidden; padding:5px;}
+.target_text_wrapper_button:focus{width:62%; float:right; background-color:#bbb; border-radius:5px; overflow:hidden; padding:4px; border:1px solid black;}
+.target_text_wrapper_button *, .target_text_wrapper_button:focus *{max-width:98%;}
+.button_button_chosen{border:1px solid #777; border-radius:5px; background-color:#bbb; color:#000; margin-bottom:5px;}
+.button_button_notChosen{border:1px solid #777; border-radius:5px; background-color:#fff; color:#002b49; margin-bottom:5px; cursor:pointer;}
+.button_button_notChosen:hover, .button_button_notChosen:focus{border:1px solid #777; border-radius:5px; background-color:#002b49; color:#fff; margin-bottom:5px; cursor:pointer;}
+	
+.button_and_target_wrapper_tab{margin-left:auto; margin-right:auto; width:80%; padding:10px; background-color:#ddd;}
+.button_wrapper_tab{width:100%; float:left; overflow:hidden;}
+.target_text_wrapper_tab{width:100%; float:right; background-color:#bbb; margin-left:15px; border-radius:0 5px 5px 5px; overflow:hidden; padding:5px;}
+.target_text_wrapper_tab:focus{width:100%; float:right; background-color:#bbb; margin-left:15px; border-radius:0 5px 5px 5px; overflow:hidden; padding:4px; border:1px solid black;}
+.target_text_wrapper_tab *, .target_text_wrapper_tab:focus *{max-width:98%;}
+.button_tab_chosen{float:left; background-color:#bbb; color:#000; border:1px solid #bbb; border-radius:5px 5px 0 0; margin-right:5px; border-bottom:none; padding:5px;}
+.button_tab_notChosen{float:left; background-color:#fff; color:#002b49; border:1px solid #bbb; border-radius:5px 5px 0 0; cursor:pointer; margin-right:5px; border-bottom:none; padding:5px;}
+.button_tab_notChosen:hover, .button_tab_notChosen:focus{float:left; background-color:#002b49; color:#fff; border:1px solid #bbb; border-radius:5px 5px 0 0; cursor:pointer; margin-right:5px; border-bottom:none; padding:5px;}
+
+.button_tab, .button_button, .inlineHyperlink, .tooltip {width:98%;}
+.button_tab td *, .button_button td *, .inlineHyperlink td *, .tooltip td *{max-width:680px;}
+.button_tab caption{background-color:#0cc; margin-left:auto; margin-right:auto; border:3px dotted #ccc;}
+.button_button caption{background-color:#c0c; margin-left:auto; margin-right:auto; border:3px dotted #ccc;}
+.inlineHyperlink caption{background-color:#cc0; margin-left:auto; margin-right:auto; border:3px dotted #ccc;}
+.tooltip caption{background-color:#c0c; margin-left:auto; margin-right:auto; border:3px dotted #ccc;}
+
+
+.inlineHyperlink_notChosen {color:#ff0000; font-size:larger; cursor:pointer;}
+.inlineHyperlink_chosen {color:#00ff00; font-size:larger; cursor:pointer;}
+.inlineHyperlink_notChosen:focus, .inlineHyperlink_chosen:focus, .inlineHyperlink_notChosen:hover, .inlineHyperlink_chosen:hover{background-color:#ddd;}
+.hiddenSpan {display: inline-block; float: left; width: 100%; background-color: #dce1f1; border: 1px solid black; border-radius:5px; padding:8px; }
+.hiddenSpan *{max-width:98%;}
+
+.tooltip_notHovered {color:#ff0000; font-size:larger; cursor:pointer;}
+.tooltip_hovered {color:#00ff00; font-size:larger; cursor:pointer;}
+.tooltip_notHovered:focus, .tooltip_hovered:focus, .tooltip_notHovered:hover, .tooltip_hovered:hover{background-color:#ddd;}
+#tooltip_target{position:absolute; width:20%; max-width:60%; padding:10px; border:2px solid black; border-radius:5px; background-color:#fff;}
+
+.hidden{display:none;}
+annotation{display:none;}
+</style>
+</head>
+
+<body>
+<h1>WYSYWIDGET Template</h1>
+<h2>Tab wysywidget</h2>
+<p>Built by filling out a table in the editor.</p>
+<table class="button_tab"><caption>Enter your content into this table in order to build your TAB style wysywidget.</caption>
+<tbody>
+<tr>
+<th>Tab Text</th>
+<th>Related Content</th>
+</tr>
+<tr>
+<td>Tab 1</td>
+<td>Example Content 1</td>
+</tr>
+<tr>
+<td>Tab 2</td>
+<td>Example Content 2, now with nearly nothing unique!</td>
+</tr>
+<tr>
+<td>Tab 3</td>
+<td>Example Content 3, the third in a trilogy.<br /><img src="https://c1.staticflickr.com/9/8412/8763389518_c484583e4b.jpg" /></td>
+</tr>
+</tbody>
+</table>
+<p>&nbsp;</p>
+<h2>Button wysywidget</h2>
+<p>Built by filling out a table in the editor.</p>
+<table class="button_button"><caption>Enter your content into this table in order to build your BUTTON style wysywidget.</caption>
+<tbody>
+<tr>
+<th>Button Text</th>
+<th>Related Content</th>
+</tr>
+<tr>
+<td>Button 1</td>
+<td>Stuff 1</td>
+</tr>
+<tr>
+<td>Click me 2</td>
+<td>Stuff 2</td>
+</tr>
+<tr>
+<td>Charmed</td>
+<td>Stuff 3<br /><img src="https://c1.staticflickr.com/5/4085/4955930501_e095c7dbbc_b.jpg" /></td>
+</tr>
+</tbody>
+</table>
+<p>&nbsp;</p>
+<h2>InlineHyperlink wysywidget</h2>
+<p>Built by filling out a table in the editor.</p>
+<table class="inlineHyperlink"><caption>Enter your content into this table in order to build your INLINEHYPERLINK style wysywidget.</caption>
+<tbody>
+<tr>
+<th>Inactive pre-text</th>
+<th>Active, visible text</th>
+<th>Hidden text</th>
+<th>Inactive post-text</th>
+</tr>
+<tr>
+<td>This is some pre-text which leads up to a statement that suggests that you</td>
+<td>click here to see the magic;</td>
+<td>here is that magical, previously hidden content.<br /><img src="https://c1.staticflickr.com/3/2585/4020223838_f990ec0946_z.jpg?zz=1" /></td>
+<td>you should see some new content appear, with its own fancy background after clicking the active text for the first time. Then, after clicking the fancy text for the second time, the previously hidden text should again be hidden.</td>
+</tr>
+</tbody>
+</table>
+<p>&nbsp;</p>
+<h2>Tooltip wysywidget</h2>
+<p>Built by filling out a table in the editor.</p>
+<table class="tooltip"><caption>Enter your content into this table in order to build your TOOLTIP style wysywidget.</caption>
+<tbody>
+<tr>
+<th>Inactive pre-text</th>
+<th>Active, visible text</th>
+<th>Hidden content</th>
+<th>Inactive post-text</th>
+</tr>
+<tr>
+<td>This is some pre-text which leads up to a statement to</td>
+<td>hover (or click) here to see the magic</td>
+<td>Here is that magical, previously hidden content. Put stuff here.</td>
+<td>; you should see some new content appear, floating and following your mouse until your mouse leaves the fancy text.</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

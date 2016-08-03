@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- knowledge_check_all.js -->
+<script type="text/javascript">
+// TABLE DATA
+var thisData = {};
+
+// HASHIFY
+// http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
+var thisRand = Math.round(Math.random()*10,000);
+function hashCode(val){
+	val = val.concat(thisRand);
+	var hash = 0, i, chr, len;
+	if (val.length === 0) return hash;
+	for (i = 0, len = val.length; i < len; i++) {
+		chr   = val.charCodeAt(i);
+		hash  = ((hash << 5) - hash) + chr;
+		hash |= 0; // Convert to 32bit integer
+	}
+	return Math.abs(hash);
+}
+
+// FIND TABLES
+function findTableContent(){
+	var foundTables = document.body.getElementsByTagName("TABLE");
+	for (var i=0, iMAX=foundTables.length; i<iMAX; i++){
+		// CHECK TO SEE IF EACH TABLE HAS A CLASSNAME THAT RELATES TO A SPECIFIC BUILDER FUNCTION, IF YES, CALL THAT SPECIFIC BUILDER FUNCTION ON THAT TABLE
+		if(foundTables[i].className && (foundTables[i].className=="knowledge_check")){
+			builder(foundTables[i]);
+		}
+	}
+	whichListener[whichListenerLoader]();
+}
+
+// REACT TO CLICK EVENTS ON INTERACTIVE ELEMENTS
+function clickedStuff(evnt){
+	// IF NO EVENT WAS PASSED DURING THE CLICK, USE AN EVENT THAT HAD BUBBLED TO THE WINDOW AS THE EVENT
+	if (!evnt){ var evnt = window.event;}
+	// FIND THE TARGET OF THE EVENT (.TARGET FOR FF ETC AND .SRCELEMENT FOR IE)
+	if (evnt.target){var clickedThis = evnt.target;}
+	else if (evnt.srcElement){var clickedThis = evnt.srcElement;}
+	// IN THE CASE WHERE A TEXT NODE WAS CLICKED, CHANGE THE EVENT TARGET TO THE PARENT OF THAT TEXT NODE
+	if (clickedThis.nodeType == 3){clickedThis = clickedThis.parentNode;} // http://www.quirksmode.org/js/events_properties.html safari hack;
+	// FOR KEYBOARD INTERACTION, DETERMINE WHICH KEY WAS PRESSED WHILE AN ELEMENT HAD FOCUS (.WHICH, .BUTTON, AND .KEYCODE ARE CHECKED, IN ORDER, TO FIND THE RIGHT KEY IN ALL MAJOR BROWSERS)
+	if(evnt.which){var keynum = evnt.which;}
+	else if(evnt.button){var keynum = evnt.button;}
+	else if(evnt.keyCode) {var keynum = evnt.keyCode;}
+	// DETERMINE IF A LEFT CLICK OCCURRED (KEYNUM 0 OR 1, BROWSER DEPENDENT) OR IF THE SPACE BAR (13) OR ENTER KEY (32) WERE PRESSED
+	if(keynum && (keynum == 0 || keynum == 1 || keynum == 13 || keynum == 32)){
+		if(clickedThis.tagName == "LABEL"){
+			clickedThis.getElementsByTagName("INPUT")[0].checked=true;
+			evnt.preventDefault();
+		}
+		// MAKE SURE THAT YOU PULL ALL TEXT FROM THE LABEL AND NOT JUST FROM SOME INTERNAL COMPONENTS
+		while(!clickedThis.className || (clickedThis.className != "check_immediately" && clickedThis.className != "check_all" && clickedThis.className != "check_reset" && clickedThis.className != "check_undo")){
+			clickedThis = clickedThis.parentNode;
+		}
+		// HARVEST THE SECOND PART OF THE CLICKED ELEMENT'S CLASSNAME
+		var interactiveType = clickedThis.className.split("_")[1];
+		// DETERMINE IF THE SECOND PART OF THE CLICKED ELEMENT'S CLASSNAME MATCHES AN EXPECTED CLASSNAME
+		if(interactiveType == "immediately" || interactiveType == "all" || interactiveType == "reset" || interactiveType == "undo"){
+			// CALL THE APPROPRIATE SUB-FUNCTION OF THE DOSTUFF VARIABLE BASED ON THE INTERACTIVE TYPE (HARVESTED FROM THE ELEMENT'S CLASSNAME)
+			doStuff[interactiveType](clickedThis);
+		}
+		else {alert("something is amiss :( " + clickedThis.tagName);}
+	}
+}
+
+
+// THE PREVSIBLINGCOUNTER FUNCTION RECEIVES A BUTTON ELEMENT AND DETERMINES THAT BUTTON ELEMENT'S NUMERIC POSITION IN ITS PARENT
+// THIS INFORMATION IS USED TO THEN PULL THE APPROPRIATE INFORMATION OUT OF THE TABLE THAT WAS USED TO BUILD THE BUTTON AND RESPONSE TEXT ELEMENTS
+function prevSiblingCounter(whichThat){
+	var thisType = whichThat.tagName;
+	var thisParent = whichThat.parentNode;
+    var theseKids = thisParent.getElementsByTagName(thisType);
+    for(var i=0, iMAX=theseKids.length; i<iMAX; i++){
+       if(theseKids[i] == whichThat){
+           return i;
+       }
+    }
+}
+
+
+// THE DOSTUFF VARIABLE CONTAINS WITHIN IT A SET OF FUNCTIONS THAT ADD INTERACTIVITY TO THE PAGE
+var defaultAnswerArray = ["Incorrect.<br>", "Correct!<br>"];
+var doStuff = {
+	// THE BUTTON FUNCTION WILL UPDATE THE TEXT SEEN IN A TEXTTARGET DIV WHEN A BUTTON OR TAB IS CLICKED
+	immediately: function(thisButton){
+		var findP = thisButton.parentNode.previousSibling;
+		while(!findP.tagName || findP.tagName != "P"){
+			findP = findP.previousSibling;
+		}
+		// alert(findP.textContent || findP.innerText);
+		if(thisData[hashCode(thisButton.textContent.concat(findP.textContent).replace(/ /g,''))]){
+			//alert(thisData[hashCode(thisButton.textContent.concat(findP.textContent).replace(/ /g,''))][1]);
+			var questionPs = thisButton.parentNode.getElementsByTagName("DIV");
+			var answerSpot = questionPs[0];
+			answerSpot.innerHTML = defaultAnswerArray[thisData[hashCode(thisButton.textContent.concat(findP.textContent).replace(/ /g,''))][0]] + thisData[hashCode(thisButton.textContent.concat(findP.textContent).replace(/ /g,''))][1];
+			answerSpot.className = "feedbackText"+thisData[hashCode(thisButton.textContent.concat(findP.textContent).replace(/ /g,''))][0];
+		}
+		else{alert("please try again")};
+	},
+	all: function(notUsed){
+		var allDivs = document.getElementsByTagName("DIV");
+		var theseInputs = "";
+		var anyChecks = 0;
+		var answerSpot = ""; var thisButton = ""; var findP = "";
+		for(var i=0, iMAX=allDivs.length; i<iMAX; i++){
+			if (allDivs[i].className && allDivs[i].className == "clearfix question"){
+				theseInputs = allDivs[i].getElementsByTagName("INPUT");
+				for(var j=0, jMAX=theseInputs.length; j<jMAX; j++){
+					if(theseInputs[j].checked===true){
+						thisButton = theseInputs[j].parentNode;
+						// get the first div inside of allDivs[i]... this is the feedback target :D
+						findP = thisButton.parentNode.previousSibling;
+						while(!findP.tagName || findP.tagName != "P"){
+							findP = findP.previousSibling;
+						}
+						answerSpot = allDivs[i].getElementsByTagName("DIV")[0];
+						answerSpot.innerHTML = defaultAnswerArray[thisData[hashCode(thisButton.textContent.concat(findP.textContent).replace(/ /g,''))][0]] + thisData[hashCode(thisButton.textContent.concat(findP.textContent).replace(/ /g,''))][1];
+						answerSpot.className = "feedbackText"+thisData[hashCode(thisButton.textContent.concat(findP.textContent).replace(/ /g,''))][0];
+						anyChecks = 1;
+						break;
+					}
+					if(theseInputs[j].type=="text" && theseInputs[j].value && theseInputs[j].value != ""){
+						anyChecks = 1;
+						thisButton = theseInputs[j];
+						// get the first div inside of allDivs[i]... this is the feedback target :D
+						findP = thisButton.parentNode.previousSibling;
+						while(!findP.tagName || findP.tagName != "P"){
+							findP = findP.previousSibling;
+						}
+						if(thisData[hashCode(thisButton.value.concat(findP.textContent).replace(/ /g,''))]){
+							answerSpot = allDivs[i].getElementsByTagName("DIV")[0];
+							answerSpot.innerHTML = defaultAnswerArray[thisData[hashCode(thisButton.value.concat(findP.textContent).replace(/ /g,''))][0]] + thisData[hashCode(thisButton.value.concat(findP.textContent).replace(/ /g,''))][1];
+							answerSpot.className = "feedbackText"+thisData[hashCode(thisButton.value.concat(findP.textContent).replace(/ /g,''))][0];
+						}
+						else{
+							answerSpot = allDivs[i].getElementsByTagName("DIV")[0];
+							answerSpot.innerHTML = "Incorrect.";
+							answerSpot.className = "feedbackText0";
+						}
+					}
+				}
+				if(anyChecks ==0){
+					answerSpot = allDivs[i].getElementsByTagName("DIV")[0];
+					answerSpot.innerHTML = "Unanswered.";
+					answerSpot.className = "feedbackText0";
+				}
+				anyChecks = 0;
+			}
+		}
+		notUsed.innerHTML = "Resubmit";
+	},
+	reset: function(notUsed){
+		var allDivs = document.getElementsByTagName("DIV");
+		for(var i=0, iMAX=allDivs.length; i<iMAX; i++){
+			if(allDivs[i].className && (allDivs[i].className == "feedbackText0" || allDivs[i].className == "feedbackText1")){
+				allDivs[i].className = "feedbackText";
+			}
+		}
+	},
+	undo: function(notUsed){
+		var allDivs = document.getElementsByTagName("DIV");
+		for(var i=0, iMAX=allDivs.length; i<iMAX; i++){
+			if(allDivs[i].className && (allDivs[i].className == "feedbackText0" || allDivs[i].className == "feedbackText1")){
+				allDivs[i].className = "feedbackText";
+			}
+		}
+		var allInputs = document.getElementsByTagName("INPUT")
+		for(var j=0, jMAX=allInputs.length; j<jMAX; j++){
+			if(allInputs[j].checked === true){
+				allInputs[j].checked = false;
+			}
+			if(allInputs[j].type=="text"){
+				allInputs[j].value = "";
+			}
+		}
+	}
+};
+
+
+
+// THE BUILDER FUNCTION PULLS INFORMATION FROM TABLES IN ORDER TO GENERATE INTERACTIVE CONTENT
+function builder(thisTable){
+	// FIRST THING FIRST... HIDE THE DATA TABLES FROM THE USER SO THEY AREN'T SEEN NEXT TO THE INTERACTIVE COMPONENTS ON THE PAGE
+	thisTable.style.display="none";
+	// INITIALIZE SOME VARIABLES THAT WILL STORE INFORMATION FOUND IN THISTABLE
+	var lastSection = "", lastQuestion = ""; lastSectionText = "NOPE_123", lastQuestionText = "NOPE_123";
+	var tableRows, rowElements, section, sectionText="", question, questionText="", answer, answerText, isCorrect, answerType, feedback, hashedAll, hashedAnswer, sectionArray = [], questionArray = [];
+	var sectionCounter = -1; questionCounter = -1; outerQuestionCounter = 0; innerQuestionCounter = 0; answerCounter = 0; alreadyAnswer = 0;
+	var kcWrapper = document.createElement("DIV"), sectionWrapper = document.createElement("DIV"), questionWrapper = document.createElement("DIV");
+	kcWrapper.className = "clearfix"; sectionWrapper.className = "clearfix section"; questionWrapper.className = "clearfix question";
+	var sectionP = document.createElement("P"), questionP = document.createElement("P"), answerSpan = document.createElement("SPAN");
+	sectionP.className = "sectionText"; questionP.className = "questionText"; answerSpan.className = "answerText";
+	var feedbackP = document.createElement("P"); feedbackP.className = "feedbackText";
+	var feedbackDiv = document.createElement("DIV"); feedbackDiv.className = "feedbackDiv";
+	var tempSectionP = "", tempQuestionP = "", tempQuestionNum = "", tempAnswerSpan = "", tempAnswerLetter = "", tempFeedbackP = "", tempFeedbackDiv = "";
+	var radioInput = document.createElement("INPUT"), radioLabel = document.createElement("LABEL"), tempRadioInput = "", tempRadioLabel = "";
+	radioLabel.tabIndex = 0;
+	var tempAnswerId = "";
+	var verticalBreak = document.createElement("BR"), tempBR = "";
+	var textInput = document.createElement("INPUT"); tempTextInput = "";
+	var numToLetter = ["A","B","C","D","E","F","G","H","I","J","K","L"];
+	var numToRoman = ["i","ii","iii","iv","v","vi","vii","viii","ix","x","xi","xii"];
+	textInput.type = "text";
+	radioInput.type = "radio"; 
+	// PULL CONTENT FROM THISTABLE
+	// GET ALL OF THE ROWS FOUND IN THE TABLE
+	tableRows = thisTable.getElementsByTagName("TR");
+	// LOOP THROUGH THE TABLE ROWS, STARTING WITH THE SECOND ROW (BECAUSE THE FIRST ROW, ROW[0], IS THE HEADER ROW AND CONTAINS NO DATA)
+	for(var i=1, iMAX=tableRows.length; i<iMAX; i++){
+		// IN EVERY ROW LOOP, COLLECT ALL OF THE TD ELEMENTS
+		rowElements = tableRows[i].getElementsByTagName("TD");
+		// COLLECT THE SECTION, QUESTION, AND ANSWER TYPE AND WHETHER THE ANSWER IS CORRECT FOR EVERY ANSWER (EVERY ROW)
+		section = rowElements[0].innerHTML;
+		question = rowElements[1].innerHTML;
+		answerType = rowElements[2].textContent || rowElements[2].innerText;
+		sectionText = rowElements[0].textContent || rowElements[0].innerText || ""; // else find src function
+		questionText = rowElements[1].textContent || rowElements[1].innerText || "";
+		// DETERMINE WHETHER THERE IS SOME CONTENT IN THE TABLE, IF YES, GO AHEAD AND BUILD A RELATED INTERACTIVE ELEMENT
+		// HERE, IT IS ASSUMED THAT THE BUTTON NAME AND TARGETTEXT VALUES WILL ONLY BE EQUAL IF THEY ARE BOTH BLANK. UNLIKELY EDGE CASES WILL CAUSE PROBLEMS AKA BUTTON NAME = TEXT TO SHOW.
+		if(lastSectionText != sectionText){
+			// PULL SECTION TEXT FROM TABLE CELL
+//			sectionText = rowElements[0].textContent || rowElements[0].innerText;
+			// CHECK TO SEE IF SECTION TEXT IS BLANK, IF YES, SET VARIABLE SO THAT QUESTIONS ARE APPENDED TO THE KCWRAPPER, OTHERWISE, CREATE A NEW SECTION WRAPPER AND SET VARIABLE SO THAT QUESTIONS ARE APPENDED TO THIS NEW SECTION TILL THERE IS A SECTION CHANGE
+			if(!sectionText || sectionText == ""){
+				sectionCounter++;
+				sectionArray[sectionCounter] = kcWrapper;
+				questionNumbering = "direct";
+			}
+			else {
+				// create a new section div and append it to the kcWrapper;
+				outerQuestionCounter++;
+				innerQuestionCounter = 0;
+				tempSectionP = sectionP.cloneNode(true);
+				tempSectionP.innerHTML = outerQuestionCounter + ". " + section;
+				kcWrapper.appendChild(tempSectionP);
+				sectionCounter++;
+				sectionArray[sectionCounter] = sectionWrapper.cloneNode(true);
+				kcWrapper.appendChild(sectionArray[sectionCounter]);
+				questionNumbering = "roman";
+			}
+			lastSectionText = sectionText;
+		}
+		if(lastQuestionText != questionText){
+			
+			if(questionNumbering == "direct"){
+				outerQuestionCounter++;
+				tempQuestionNum = outerQuestionCounter + ". ";
+			}
+			else{
+				tempQuestionNum = numToRoman[innerQuestionCounter] + ". ";
+				innerQuestionCounter++;
+			}
+//			questionText = rowElements[1].textContent || rowElements[1].innerText;
+			questionCounter++;
+			tempQuestionP = questionP.cloneNode(true);
+			tempQuestionP.innerHTML = " " + tempQuestionNum + " " + question;
+			sectionArray[sectionCounter].appendChild(tempQuestionP);
+			questionArray[questionCounter] = questionWrapper.cloneNode(true);
+			sectionArray[sectionCounter].appendChild(questionArray[questionCounter]);
+			alreadyAnswer = 0; answerCounter = 0;
+			lastQuestionText = questionText;
+		}
+		if(answerType == 2){
+			answerText = rowElements[3].textContent || rowElements[3].innerText;
+			isCorrect = rowElements[4].textContent || rowElements[4].innerText;
+			feedback = rowElements[5].innerHTML;
+			if(alreadyAnswer == 0){
+				tempFeedbackDiv = feedbackDiv.cloneNode(true);
+				questionArray[questionCounter].appendChild(tempFeedbackDiv);
+				//questionArray[questionCounter].insertBefore(tempFeedbackDiv,questionArray[questionCounter].lastChild);
+				tempTextInput = textInput.cloneNode(true);
+				tempTextInput.name = "q"+questionCounter;
+				questionArray[questionCounter].insertBefore(tempTextInput,questionArray[questionCounter].lastChild);
+				//questionArray[questionCounter].appendChild(tempTextInput);
+				// append a button that has a check_immediately className
+			}
+			alreadyAnswer = 1; answerCounter++;
+			// UPDATE THE ANSWER JSON
+			thisData[hashCode(answerText.concat(tempQuestionNum,questionText).replace(/ /g,''))] = [isCorrect,feedback];
+		}
+		else{
+			answerText = rowElements[3].textContent || rowElements[3].innerText;
+			answer = rowElements[3].innerHTML;
+			isCorrect = rowElements[4].textContent || rowElements[4].innerText;
+			feedback = rowElements[5].innerHTML;
+			if(alreadyAnswer == 0){
+				tempFeedbackDiv = feedbackDiv.cloneNode(true);
+				questionArray[questionCounter].appendChild(tempFeedbackDiv);
+			}
+			// APPEND EACH ANSWER TO THE QUESTION DIV
+			tempAnswerSpan = answerSpan.cloneNode(true);
+			tempAnswerSpan.innerHTML = answer;
+			tempAnswerId = "q"+questionCounter+"a"+answerCounter;
+			tempRadioInput = radioInput.cloneNode(true);
+			tempRadioInput.id = tempAnswerId;
+			tempRadioInput.name = "q"+questionCounter;
+			tempRadioLabel = radioLabel.cloneNode(true);
+			tempRadioLabel.for = tempAnswerId;
+			//tempRadioLabel.className = "check_immediately";
+			tempAnswerLetter = answerSpan.cloneNode(true);
+			tempAnswerLetter.innerHTML = " " + numToLetter[answerCounter] + ". ";
+			tempRadioLabel.appendChild(tempRadioInput);
+			tempRadioLabel.appendChild(tempAnswerLetter);
+			tempRadioLabel.appendChild(tempAnswerSpan);
+			questionArray[questionCounter].insertBefore(tempRadioLabel,questionArray[questionCounter].lastChild);
+			tempBR = verticalBreak.cloneNode(true);
+			questionArray[questionCounter].insertBefore(tempBR,questionArray[questionCounter].lastChild);
+			tempBR = verticalBreak.cloneNode(true);
+			questionArray[questionCounter].insertBefore(tempBR,questionArray[questionCounter].lastChild);
+			alreadyAnswer = 1; answerCounter++;
+			// UPDATE THE ANSWER JSON
+			thisData[hashCode(tempAnswerLetter.innerHTML.concat(answerText,tempQuestionNum,questionText).replace(/ /g,''))] = [isCorrect,feedback];
+		}
+		// CLEAR THE ROWELEMENTS ARRAY BEFORE THE NEXT LOOP
+		rowElements.length = 0;
+	}
+	thisTable.parentNode.insertBefore(kcWrapper, thisTable);
+	thisTable.parentNode.removeChild(thisTable);
+	tableRows.length = 0;
+	var allButton = document.createElement("BUTTON");
+	allButton.className = "check_all";
+	allButton.innerHTML = "Submit";
+	allButton.tabIndex = 0;
+	document.body.appendChild(allButton);
+	var resetButton = document.createElement("BUTTON");
+	resetButton.className = "check_reset";
+	resetButton.innerHTML = "Clear Feedback";
+	resetButton.style.marginLeft = "1em";
+	resetButton.tabIndex = 0;
+	document.body.appendChild(resetButton);
+	var clearButton = document.createElement("BUTTON");
+	clearButton.className = "check_undo";
+	clearButton.innerHTML = "Reset Answers";
+	clearButton.style.marginLeft = "1em";
+	clearButton.tabIndex = 0;
+	document.body.appendChild(clearButton);
+}
+
+
+// LISTENER LOADERS
+var whichListenerLoader = "newListener";
+
+var whichListener = {
+	newListener: function(nothing) {
+		var allLabels = document.getElementsByTagName("LABEL");
+		for(var i=0; i<allLabels.length; i++){
+			//if(allLabels[i].className && allLabels[i].className.indexOf("check")>=0){
+				allLabels[i].addEventListener ('mouseup', clickedStuff, false);
+				allLabels[i].addEventListener ('keyup', clickedStuff, false);
+			//}
+		}
+		var allButtons = document.getElementsByTagName("BUTTON");
+		for(var i=0; i<allButtons.length; i++){
+			if(allButtons[i].className && allButtons[i].className.indexOf("check")>=0){
+				allButtons[i].addEventListener ('mouseup', clickedStuff, false);
+				allButtons[i].addEventListener ('keyup', clickedStuff, false);
+			}
+		}
+	},
+	oldListener: function(nothing) {
+		var allLables = document.getElementsByTagName("LABEL");
+		for(var i=0; i<allLables.length; i++){
+			//if(allLables[i].className  && allLables[i].className.indexOf("check")>=0){
+				allLables[i].attachEvent ('onmouseup', clickedStuff);
+				allLables[i].attachEvent ('onkeyup', clickedStuff);
+			//}
+		}
+		var allButtons = document.getElementsByTagName("BUTTON");
+		for(var i=0; i<allButtons.length; i++){
+			if(allButtons[i].className  && allButtons[i].className.indexOf("check")>=0){
+				allButtons[i].attachEvent ('onmouseup', clickedStuff);
+				allButtons[i].attachEvent ('onkeyup', clickedStuff);
+			}
+		}
+	}
+};
+
+// DETERMINE WHICH EVENT LISTENERS TO USE && LOAD CONTENT FROM DATA TABLES
+if(document.addEventListener){
+	document.addEventListener('DOMContentLoaded', function () {
+		whichListenerLoader = "newListener";
+		// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+		findTableContent();
+	});
+}
+else if(document.attachEvent){
+	document.attachEvent('onreadystatechange', function(){
+		if ( document.readyState === 'complete' ) {
+			whichListenerLoader = "oldListener";
+			// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+			findTableContent();
+		}
+	});
+}
+else if (window.addEventListener){
+	window.addEventListener('load', function () {
+		whichListenerLoader = "newListener";
+		// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+		findTableContent();
+	});
+}
+else if (window.attachEvent){
+	window.attachEvent('onload', function () {
+		whichListenerLoader = "oldListener";
+		// whichListener[whichListenerLoader](); // not to be run here because interactive content not yet built onload
+		findTableContent();
+	});
+}
+else {
+	var fn = window.onload;
+	window.onload = function() {
+		fn && fn();
+		alert('This site will not function correctly using your current browser, please try the newest browser available to you.');
+	}
+}
+
+// THIS SCRIPT WILL MAKE INVISIBLE THE VERTICAL LINE THAT SHOWS UP AT THE END OF EACH BIT OF MATHJAX AS OF 03/28/2016
+var globalTimeout;
+var stopIt = 0;
+globalTimeout = setTimeout(checkJax,1000);
+function checkJax(){
+	if(document.getElementById("MathJax_Message")){
+		MathJax.Hub.Startup.signal.Interest(
+			function (message) {
+				if (message == "End"){
+					var theseNOBR = document.getElementsByTagName("NOBR");
+					for(var i=0, iMAX = theseNOBR.length; i<iMAX; i++){
+					    theseNOBR[i].childNodes[0].lastChild.style.borderLeftColor="transparent";
+					}
+					clearTimeout(globalTimeout);
+				}
+			}
+		);
+	}
+	else if(stopIt<10){
+		stopIt++;
+		globalTimeout = setTimeout(checkJax,1000);
+	}
+	else {clearTimeout(globalTimeout);}
+}
+</script>
+<!-- OPEN SANS CSS (USED BY REGIS FOR FONTS) -->
+<style type='text/css'>
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/K88pR3goAWT7BTt32Z01mxJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+20B4, U+2DE0-2DFF, U+A640-A69F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/RjgO7rYTmqiVp7vzi-Q5URJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/LWCjsQkB6EMdfHrEVqA1KRJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/xozscpT2726on7jbcb_pAhJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0370-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/59ZRklaO5bWGqF5A9baEERJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/u-WUoqrET9fUeobQW7jkRRJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0100-024F, U+1E00-1EFF, U+20A0-20AB, U+20AD-20CF, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/cJZKeOuBrn4kERxqtaUH3VtXRa8TVwTICgirnJhmVJw.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+
+</style>
+<!-- Normalize, reset, clearfix (used for cross-browser similarity)  -->
+<style type="text/css">
+/* box model normalization */ *,*:before,*:after{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}
+/* reset */html,body,div,applet,object,iframe, h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,span,img,dl,dt,dd,ol,ul,li,fieldset,form,label,legend{margin:0;padding:0;border:0;outline:0;font-size:100%;font-weight:normal;background:transparent;}body{line-height:1.4;}ul{list-style:none;}blockquote,q{quotes:none;}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none;}:focus{outline:0;}button a,button a:hover,button a:visited{color:#000000;text-decoration:none;}
+/*! normalize.css v3.0.3 | MIT License | github.com/necolas/normalize.css */html{font-family:'Open Sans', Arial, Helvetica, sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}article,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block;vertical-align:baseline}audio:not([controls]){display:none;height:0}[hidden],template{display:none}a{background-color:transparent}a:active,a:hover{outline:0}abbr[title]{border-bottom:1px dotted}b,strong{font-weight:bold}dfn{font-style:italic}mark{background:#ff0;color:#000}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sup{top:-0.5em}sub{bottom:-0.25em}svg:not(:root){overflow:hidden}figure{margin:1em 40px}hr{height:0}pre{overflow:auto}code,kbd,pre,samp{font-family:monospace,monospace;}button,input,optgroup,select,textarea{color:inherit;font:inherit;margin:0}button{overflow:visible}button,select{text-transform:none}button,html input[type="button"],input[type="reset"],input[type="submit"]{-webkit-appearance:button;cursor:pointer}button[disabled],html input[disabled]{cursor:default}button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}input{line-height:normal}input[type="checkbox"],input[type="radio"]{padding:0}input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{height:auto}input[type="search"]{-webkit-appearance:textfield;}input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance:none}textarea{overflow:auto}optgroup{font-weight:bold}table{border-collapse:collapse;border-spacing:0}td,th{padding:0}
+/* clearfix */.clearfix{overflow:hidden; zoom:1;}.clearfix:before,.clearfix:after{content:''; display:table;}.clearfix:after {clear:both;}
+</style>
+<!--  Default styles for all Regis university courses -->
+<style type="text/css">
+/* DOCUMENT BASICS*/
+html{
+	background: url(https://rhchp.regis.edu/css/course_css/images/core/background_triangle.jpg) #cccccc;
+	background-repeat: repeat;
+	font-family:'Open Sans', Arial, Helvetica, sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;
+}
+html:after {
+	content: "© Regis University. All Rights Reserved.";
+	text-align: center;
+	font-size: .75em;
+	color: #002b49;
+	width:100%;
+	display:block;
+}
+
+body {
+	margin: .5em .25em 2em .25em;
+	padding-bottom:20px;
+	background-color:#FFFFFF;
+}
+
+/* STANDARD TEXT */
+h1 {
+	font-size: 1.25em;
+	font-weight: bold;
+	text-align: right;
+	color: white;
+	background-color: #002b49;
+	margin: 0 0 2.5em 0;
+	padding: .35em 2em .43em 12em;
+	border-bottom: .4em solid #ffd200;
+}
+h1:before { /*BANNER*/
+	position:absolute;
+	left:.2em;
+	top:.4em;
+	width:96px;
+	height:96px;
+	background-image:url('https://rhchp.regis.edu/css/course_css/stylesheets/images/regis_shield.png');
+	content:' ';
+}
+
+h2, h3, h4, h5, h6 {
+	font-weight: bold;
+	color: #002b49;
+	padding: .25em .5em .25em .5em;
+	border-bottom: 1px solid #e7dba9;
+}
+
+h2 {
+	font-size: 1.25em;
+}
+
+h3 {
+	font-size: 1.15em;
+	/* color: #ffd200; */
+}
+
+h4 {
+	font-size: 1.05em;
+}
+
+h5 {
+	font-size: 0.95em;
+	/* color: #ffd200; */
+}
+
+h6 {
+	font-size: 0.85em;
+}
+
+p {
+	font-size: .875em;
+	padding: .25em .5em .25em .5em;
+}
+
+/* TEXT CLASSES */
+.jesuit{
+	margin-left: auto; margin-right: auto;
+	margin-top:20px; margin-bottom:20px;
+	width: 80%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	border-radius:.5em;
+	padding: .5em;
+	clear: both;
+	overflow: hidden;
+	font-size:1em;
+	font-weight:400;
+}
+.jesuit:before {
+	float: right;
+	content: url(https://rhchp.regis.edu/css/course_css/images/core/icon_jesuit.png);
+}
+
+.callout_right{
+	margin-left:20%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	font-size:1em;
+	font-weight:400;
+	margin-right:.5em;
+}
+
+.callout_left{
+	margin-right:20%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	font-size:1em;
+	font-weight:400;
+	margin-left:.5em;
+}
+
+.callout_center{
+	margin-left:10%;
+	margin-right:10%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	font-size:1em;
+	font-weight:400;
+}
+
+/* TABLES */
+tr:nth-child(odd){
+	 background-color:#e7dba9;
+}
+tr:nth-child(even){ 
+    background-color:#ffffff;
+}
+tr:hover{ 
+	background-color: #ffd200;
+}
+td, th{
+	padding: .5em .75em .5em .75em;
+	min-width: 3em;
+}
+th{
+	background-color:#002b49;
+	color:#ffffff;
+}
+
+/* LISTS */
+/*lists*/
+
+ul {
+	list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/bullet.gif');
+	padding-left:.5em;
+	list-style-position:inside;
+}
+ol  {
+	padding-left:.5em;
+	list-style-position:inside;
+}
+li {
+	padding:.5em 1em;
+	font-size: .875em;
+}
+/*code callout*/
+
+.code {
+	background-color: #e7dba9;
+	font-family: "Courier New", Courier, monospace;
+	font-size: small;
+	word-wrap: break-word;
+	white-space: pre;
+	padding: 1em;
+	border-radius: 1em;
+	border: 1px dotted #ffd200;
+	}
+/*accents*/
+.red  {color:#49002b;}
+.green {color: #2b4900;}
+.blue {color: #002b49;}
+</style>
+<!-- Slight styling changes, specific to the Regis College of Computer and Information Sciences  -->
+<style type="text/css">
+/* DOCUMENT BASICS*/
+html{
+	background: url(https://rhchp.regis.edu/css/course_css/images/core/background_triangle.jpg) #cccccc;
+	background-repeat: repeat;
+}
+html:after {
+	content: "© Regis University. All Rights Reserved.";
+	text-align: center;
+	font-size: .75em;
+	color: #002b49;
+	width:100%;
+	display:block;
+}
+
+body {
+	margin: 1em 0 2em 0;
+	padding-bottom:20px;
+	background-color:#FFFFFF;
+	line-height:1.4;
+	font-family: 'Open Sans', Arial, Helvetica, sans-serif;
+}
+
+/* STANDARD TEXT */
+h1 {
+	font-size: 1.25em;
+	font-weight: bold;
+	text-align: right;
+	color: white;
+	background-color: #000a29;
+	margin: 0 0 3em 0;
+	padding: .35em 2em .43em 19em;
+	border-bottom: .4em solid #f1552d;
+}
+h1 > img { /* BANNER */
+	position: absolute;
+	left: -.25em; top: .82em;
+}
+h1:before { /*BANNER*/
+	position:absolute;
+	left:-.25em;
+	top:.82em;
+	height:96px;
+	width:339px;
+	background-image:url('https://rhchp.regis.edu/css/course_css/stylesheets/images/header_ribbon.png');
+	content:' ';
+}
+h2, h3, h4, h5, h6 {
+	font-weight: 700;
+	color: #000a29;
+	padding: .5em .5em .35em .5em;
+}
+
+h2 {
+	font-size: 1.25em;
+    background-color: #dce1f1;
+    margin-top: 20px;
+    font-weight: 900;
+    border-bottom: 2px solid #f8b2a0;
+    border-radius: 5px 5px 0 0;
+}
+
+h3 {
+	font-size: 1.15em;
+	color: #fff;
+	background-color:#052648;
+	border-radius: 0 0 5px 5px;
+	margin-top: 10px;
+}
+
+h4 {
+	font-size: 1.05em;
+    margin-top: 5px;
+	border-bottom:1px solid #9b9ea7;
+}
+
+h5 {
+	font-size: 0.95em;
+	color: #f1552d;
+}
+
+h6 {
+	font-size: 0.85em;
+}
+
+p {
+	font-size: .875em;
+	padding: 1em .5em 1em .5em;
+}
+
+a,a:hover,a:visited {color:#002b49; text-decoration:underline;font-weight:bold;}
+
+/* TEXT CLASSES */
+.jesuit{
+	margin-left: auto; margin-right: auto;
+	margin-top:20px; margin-bottom:20px;
+	width: 80%;
+	background-color: #9AB3FF;
+	border: 1px solid #F8B2A0;
+	border-radius:.5em;
+	padding: .5em;
+	clear: both;
+	overflow: hidden;
+	font-size:1em;
+	font-weight:400;
+}
+.jesuit:before {
+	float: right;
+	content: url(https://rhchp.regis.edu/css/course_css/images/core/icon_jesuit.png);
+}
+
+.callout_right{
+	margin-left:20%;
+	background-color: #dce1f1;
+	border: 1px solid #F8B2A0;
+	font-size:1em;
+	font-weight:400;
+}
+
+.callout_left{
+	margin-right:20%;
+	margin-left:1em;
+	margin-bottom:2em;
+	background-color: #dce1f1;
+	border: 1px solid #F8B2A0;
+	border-left:1em solid #F8B2A0;
+	font-size:1em;
+	font-weight:400;
+}
+
+.callout_center{
+	margin-left:10%;
+	margin-right:10%;
+	background-color: #dce1f1;
+	border: 1px solid #F8B2A0;
+	font-size:1em;
+	font-weight:400;
+}
+
+.callout_center img.icon { position: relative; top: .5em; height: 30px; width:30px; margin-right: 10px;margin-left: 2px;}
+
+.center:not(table){
+	text-align:center;
+}
+.right:not(table){
+	text-align:right;
+}
+
+.callout-quote {
+	font-style: italic;
+	text-align: center;
+	background-image:url(images/core/quote_open.png), url(images/core/quote_close.png);
+	background-position: top left, bottom right;
+	background-repeat: no-repeat, no-repeat;
+	width: 50%;
+	border-top: 4px solid #186597;
+	border-bottom: 2px solid #b0aca2;
+	margin-left: auto;
+	margin-right: auto;
+	font-size: 90%;
+	background-color:#e6e4df;
+	-moz-box-shadow: 1px 1px 4px #b0aca2;
+	-webkit-box-shadow: 1px 1px 4px #b0aca2;
+	box-shadow: 1px 1px 4px #b0aca2;
+	/* For IE 8 */
+    -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#b0aca2')";
+}
+
+/* TABLES */
+tr:nth-child(odd){
+	 background-color:#ccc;
+}
+tr:nth-child(even){ 
+    background-color:#fff;
+}
+tr:hover{ 
+	background: #9AB3FF;
+}
+td, th{
+	padding: .5em .75em .5em .75em;
+	min-width: 3em;
+	vertical-align:top;
+}
+th{
+	background-color:#000a29;
+	color:white;
+}
+
+table.center{
+	margin-left:auto;
+	margin-right:auto;
+	max-width:90%;
+}
+
+/* LISTS */
+/*lists*/
+
+ul {
+	list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/bullet.gif');
+	padding-left:0;
+	list-style-position:outside;
+}
+ol , ul ol {
+	padding-left:2em;
+	list-style-position:outside;
+	list-style-type:decimal;
+	list-style-image:none;
+ }
+ol ol {
+	padding-left:2em;
+	list-style-position:outside;
+	list-style-type:lower-alpha;
+	list-style-image:none;
+ } 
+ol ol ol {
+	padding-left:2em;
+	list-style-position:outside;
+	list-style-type:lower-roman;
+	list-style-image:none;
+ } 
+ 
+li {
+	padding:.5em 1em;
+	font-size: .875em;
+}
+li li{
+	padding: .5em 0 .5em 0;
+	font-size: 1em;
+}
+li li:before{}
+li.jesuit {margin-left: 5px; background-color: #efefef;}
+/*code callout*/
+
+.code {
+	background-color: #efefef;
+	font-family:"Courier New",Courier,sans-serif;
+	font-size: small;
+	white-space: pre;
+	padding: 1em;
+	border-radius: 1em;
+	border: 1px dotted #333;
+	overflow:auto;
+}
+
+/*accents*/
+.red  {color:#49002b;}
+.green {color: #2b4900;}
+.blue {color: #002b49;}
+.orange{color:#F8B2A0; font-weight:bold;}
+</style>
+<!-- A few additional, custom styles for the Computer Science program within the Regis College of Computer and Information Sciences  -->
+<style type="text/css">
+/* DOCUMENT BASICS*/
+h1 {
+	border-bottom: .4em solid #839f54;
+}
+h1:before { /*BANNER*/
+	background-image:url('https://rhchp.regis.edu/css/course_css/stylesheets/images/header_ribbon_cs_green.png');
+}
+h1.no_image {text-align:left; padding-left:1em; margin:0 0 1em 0;}
+h1.no_image:before {background-image:none;}
+
+h2, h3, h4, h5, h6 {
+	background-color:transparent;
+	border-bottom: 0;
+	border-radius:0;
+}
+
+h2 {
+	font-size: 1.275em;
+	font-weight:900;
+	padding-left:.5em;
+}
+
+h3 {
+    font-size: 1.175em;
+	color: #506E1C;
+	padding-left:.75em;
+}
+
+h4 {
+	font-size: 1.075em;
+	padding-left:1em;
+}
+
+h5 {
+	font-size: .975em;
+	color: #506E1C;
+	padding-left:1.25em;
+}
+
+h6 {
+	font-size: .875em;
+	padding-left:1.5em;
+}
+
+p {
+	font-size: .875em;
+	padding: 1em .5em 1em 2em;
+}
+
+a,a:hover,a:visited {color:#002b49; text-decoration:underline;font-weight:bold;}
+
+/* TEXT CLASSES */
+
+.callout_right{
+	background-color: #9AB3FF;
+	border: 1px solid #839f54;
+}
+
+.callout_left{
+	background-color: #BAD3FF;
+	border: 1px solid #839f54;
+	border-left:1em solid #839f54;
+}
+
+.callout_center{
+	background-color: #9AB3FF;
+	border: 1px solid #839f54;
+}
+
+.indent{
+	padding-left:3.5em;
+}
+
+/* TABLES */
+.no_zebra tr:nth-child(odd){
+	 background-color:#fff;
+}
+.no_zebra tr:nth-child(even){ 
+    background-color:#fff;
+}
+.no_zebra tr:hover{ 
+	background: #fff;
+}
+
+/* LISTS */
+
+ul {
+	padding-left:3.5em;
+}
+ul ul {list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/green_bullet.gif');}
+ul ul ul {list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/smaller_bullet.gif');}
+
+ol  {
+	padding-left:3.5em;
+}
+li {
+	padding: .5em 0 .5em 0;
+	font-size: .875em;
+    margin-left: 0;
+}
+
+
+/*code callout*/
+.code {
+	margin-left:2em;
+}
+.code_courier {font-family:"Courier New",Courier,sans-serif;}
+
+/*accents*/
+.red  {color:#a5010c;}
+.green {color:#3d6c17;}
+.blue {color:#020a83;}
+.yellow{color:#ffff00;}
+.orange{color:#e66b0b;}
+.purple{color:#800080;}
+
+/*images*/
+.wrap_right{
+	float:right;
+	margin:0 0.5em;
+}
+.wrap_left{
+	float:right;
+	margin:0 0.5em;
+}
+</style>
+<!-- Styles for the knowledge check that shows all answers at once. -->
+<style type="text/css">
+.section {padding-left:1em;}
+.question {padding-left:1em;}
+label {padding-left:1.5em; border:1px solid #fff;}
+label:focus {background-color:#ccc; border:1px solid #000;}
+.sectionText{font-size:1em;}
+.questionText{font-size:1em;}
+.answerText{font-size:1em;}
+.feedbackText{display:none;}
+.feedbackText0{display:block; background-color:#dd2222; padding:5px; margin-left:2em; margin-bottom:15px;}
+.feedbackText1{display:block; background-color:#22dd22; padding:5px; margin-left:2em; margin-bottom:15px;}
+input[type="text"]{margin-left:1.5em; margin-bottom:1em;}
+button:focus {background-color:#000; color:#fff;}
+
+</style>
+
+</head>
+<body>
+<h1>Knowledge Checker</h1>
+<h2>Knowledge Check # 1</h2>
+<p>This knowledge check will help you make sure that you're ready for the real deal.<br />Relax, enjoy, and do your best!</p>
+<p></p>
+<table class="knowledge_check" style="width: 1131px;">
+<tbody>
+<tr>
+<td style="width: 82px;">section text (if any)</td>
+<td style="width: 94px;">question text</td>
+<td style="width: 128px;">type (1=multiple-choice, 2=short answer)</td>
+<td style="width: 88px;">answer text</td>
+<td style="width: 118px;">is correct? (0=no, 1=yes, 2=compare to answer text)</td>
+<td style="width: 620px;">feedback text</td>
+</tr>
+<tr>
+<td style="width: 82px;">For the following two questions, please consider that you are an alien.</td>
+<td style="width: 94px;">this is question 1 in section 1</td>
+<td style="width: 128px;">1</td>
+<td style="width: 88px;">answer please</td>
+<td style="width: 118px;">1</td>
+<td class="" style="width: 620px;">
+<p></p>
+<p class="code">var i=0;&nbsp;<br />while(i&lt;10){<br />&nbsp; i++;<br />}<br />var j=i*2;</p>
+<p></p>
+</td>
+</tr>
+<tr>
+<td style="width: 82px;"><span>For the following two questions, please consider that you are an alien.</span></td>
+<td style="width: 94px;"><span>this is question 1 in section 1</span></td>
+<td style="width: 128px;">1</td>
+<td style="width: 88px;">answer 2 wrong</td>
+<td style="width: 118px;">0</td>
+<td style="width: 620px;">
+<p>oops</p>
+</td>
+</tr>
+<tr>
+<td style="width: 82px;"><span>For the following two questions, please consider that you are an alien.</span></td>
+<td style="width: 94px;">another question in section 1</td>
+<td style="width: 128px;">1</td>
+<td style="width: 88px;">another answer</td>
+<td style="width: 118px;">1</td>
+<td style="width: 620px;">hooray</td>
+</tr>
+<tr>
+<td style="width: 82px;"><span>For the following two questions, please consider that you are an alien.</span></td>
+<td style="width: 94px;"><span>another question in section 1</span></td>
+<td style="width: 128px;">1</td>
+<td style="width: 88px;">wrong too</td>
+<td style="width: 118px;">0</td>
+<td style="width: 620px;">oh well</td>
+</tr>
+<tr>
+<td style="width: 82px;">I've only got one question, but I'm still a section, for now.</td>
+<td style="width: 94px;">Just one question inside a section.</td>
+<td style="width: 128px;">1</td>
+<td style="width: 88px;">Here is the right answer.</td>
+<td style="width: 118px;">1</td>
+<td style="width: 620px;">woot</td>
+</tr>
+<tr>
+<td style="width: 82px;"><span>I've only got one question, but I'm still a section, for now.</span></td>
+<td style="width: 94px;"><span>Just one question inside a section.</span></td>
+<td style="width: 128px;">1</td>
+<td style="width: 88px;">Here is the wrong answer.</td>
+<td style="width: 118px;">0</td>
+<td style="width: 620px;">told ya</td>
+</tr>
+<tr>
+<td style="width: 82px;"><span></span></td>
+<td style="width: 94px;"><span>Short answer please.</span></td>
+<td style="width: 128px;">2</td>
+<td style="width: 88px;">correct</td>
+<td style="width: 118px;">1</td>
+<td style="width: 620px;">nice</td>
+</tr>
+<tr>
+<td style="width: 82px;"></td>
+<td style="width: 94px;"><span>Short answer please.</span></td>
+<td style="width: 128px;">2</td>
+<td style="width: 88px;">wrong</td>
+<td style="width: 118px;">0</td>
+<td style="width: 620px;">still, hooray :D</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

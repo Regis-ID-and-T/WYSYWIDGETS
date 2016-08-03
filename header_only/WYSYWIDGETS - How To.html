@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- OPEN SANS CSS (USED BY REGIS FOR FONTS) -->
+<style type='text/css'>
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/K88pR3goAWT7BTt32Z01mxJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+20B4, U+2DE0-2DFF, U+A640-A69F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/RjgO7rYTmqiVp7vzi-Q5URJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/LWCjsQkB6EMdfHrEVqA1KRJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/xozscpT2726on7jbcb_pAhJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0370-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/59ZRklaO5bWGqF5A9baEERJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/u-WUoqrET9fUeobQW7jkRRJtnKITppOI_IvcXXDNrsc.woff2) format('woff2');
+  unicode-range: U+0100-024F, U+1E00-1EFF, U+20A0-20AB, U+20AD-20CF, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(https://fonts.gstatic.com/s/opensans/v13/cJZKeOuBrn4kERxqtaUH3VtXRa8TVwTICgirnJhmVJw.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+
+</style>
+<!-- Normalize, reset, clearfix (used for cross-browser similarity)  -->
+<style type="text/css">
+/* box model normalization */ *,*:before,*:after{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}
+/* reset */html,body,div,applet,object,iframe, h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,span,img,dl,dt,dd,ol,ul,li,fieldset,form,label,legend{margin:0;padding:0;border:0;outline:0;font-size:100%;font-weight:normal;background:transparent;}body{line-height:1.4;}ul{list-style:none;}blockquote,q{quotes:none;}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none;}:focus{outline:0;}button a,button a:hover,button a:visited{color:#000000;text-decoration:none;}
+/*! normalize.css v3.0.3 | MIT License | github.com/necolas/normalize.css */html{font-family:'Open Sans', Arial, Helvetica, sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}article,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block;vertical-align:baseline}audio:not([controls]){display:none;height:0}[hidden],template{display:none}a{background-color:transparent}a:active,a:hover{outline:0}abbr[title]{border-bottom:1px dotted}b,strong{font-weight:bold}dfn{font-style:italic}mark{background:#ff0;color:#000}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sup{top:-0.5em}sub{bottom:-0.25em}svg:not(:root){overflow:hidden}figure{margin:1em 40px}hr{height:0}pre{overflow:auto}code,kbd,pre,samp{font-family:monospace,monospace;}button,input,optgroup,select,textarea{color:inherit;font:inherit;margin:0}button{overflow:visible}button,select{text-transform:none}button,html input[type="button"],input[type="reset"],input[type="submit"]{-webkit-appearance:button;cursor:pointer}button[disabled],html input[disabled]{cursor:default}button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}input{line-height:normal}input[type="checkbox"],input[type="radio"]{padding:0}input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{height:auto}input[type="search"]{-webkit-appearance:textfield;}input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance:none}textarea{overflow:auto}optgroup{font-weight:bold}table{border-collapse:collapse;border-spacing:0}td,th{padding:0}
+/* clearfix */.clearfix{overflow:hidden; zoom:1;}.clearfix:before,.clearfix:after{content:''; display:table;}.clearfix:after {clear:both;}
+</style>
+<!--  Default styles for all Regis university courses -->
+<style type="text/css">
+/* DOCUMENT BASICS*/
+html{
+	background: url(https://rhchp.regis.edu/css/course_css/images/core/background_triangle.jpg) #cccccc;
+	background-repeat: repeat;
+	font-family:'Open Sans', Arial, Helvetica, sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;
+}
+html:after {
+	content: "© Regis University. All Rights Reserved.";
+	text-align: center;
+	font-size: .75em;
+	color: #002b49;
+	width:100%;
+	display:block;
+}
+
+body {
+	margin: .5em .25em 2em .25em;
+	padding-bottom:20px;
+	background-color:#FFFFFF;
+}
+
+/* STANDARD TEXT */
+h1 {
+	font-size: 1.25em;
+	font-weight: bold;
+	text-align: right;
+	color: white;
+	background-color: #002b49;
+	margin: 0 0 2.5em 0;
+	padding: .35em 2em .43em 12em;
+	border-bottom: .4em solid #ffd200;
+}
+h1:before { /*BANNER*/
+	position:absolute;
+	left:.2em;
+	top:.4em;
+	width:96px;
+	height:96px;
+	background-image:url('https://rhchp.regis.edu/css/course_css/stylesheets/images/regis_shield.png');
+	content:' ';
+}
+
+h2, h3, h4, h5, h6 {
+	font-weight: bold;
+	color: #002b49;
+	padding: .25em .5em .25em .5em;
+	border-bottom: 1px solid #e7dba9;
+}
+
+h2 {
+	font-size: 1.25em;
+}
+
+h3 {
+	font-size: 1.15em;
+	/* color: #ffd200; */
+}
+
+h4 {
+	font-size: 1.05em;
+}
+
+h5 {
+	font-size: 0.95em;
+	/* color: #ffd200; */
+}
+
+h6 {
+	font-size: 0.85em;
+}
+
+p {
+	font-size: .875em;
+	padding: .25em .5em .25em .5em;
+}
+
+/* TEXT CLASSES */
+.jesuit{
+	margin-left: auto; margin-right: auto;
+	margin-top:20px; margin-bottom:20px;
+	width: 80%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	border-radius:.5em;
+	padding: .5em;
+	clear: both;
+	overflow: hidden;
+	font-size:1em;
+	font-weight:400;
+}
+.jesuit:before {
+	float: right;
+	content: url(https://rhchp.regis.edu/css/course_css/images/core/icon_jesuit.png);
+}
+
+.callout_right{
+	margin-left:20%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	font-size:1em;
+	font-weight:400;
+	margin-right:.5em;
+}
+
+.callout_left{
+	margin-right:20%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	font-size:1em;
+	font-weight:400;
+	margin-left:.5em;
+}
+
+.callout_center{
+	margin-left:10%;
+	margin-right:10%;
+	background-color: #e7dba9;
+	border: 1px solid #ffd200;
+	font-size:1em;
+	font-weight:400;
+}
+
+/* TABLES */
+tr:nth-child(odd){
+	 background-color:#e7dba9;
+}
+tr:nth-child(even){ 
+    background-color:#ffffff;
+}
+tr:hover{ 
+	background-color: #ffd200;
+}
+td, th{
+	padding: .5em .75em .5em .75em;
+	min-width: 3em;
+}
+th{
+	background-color:#002b49;
+	color:#ffffff;
+}
+
+/* LISTS */
+/*lists*/
+
+ul {
+	list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/bullet.gif');
+	padding-left:.5em;
+	list-style-position:inside;
+}
+ol  {
+	padding-left:.5em;
+	list-style-position:inside;
+}
+li {
+	padding:.5em 1em;
+	font-size: .875em;
+}
+/*code callout*/
+
+.code {
+	background-color: #e7dba9;
+	font-family: "Courier New", Courier, monospace;
+	font-size: small;
+	word-wrap: break-word;
+	white-space: pre;
+	padding: 1em;
+	border-radius: 1em;
+	border: 1px dotted #ffd200;
+	}
+/*accents*/
+.red  {color:#49002b;}
+.green {color: #2b4900;}
+.blue {color: #002b49;}
+</style>
+<!-- Slight styling changes, specific to the Regis College of Computer and Information Sciences  -->
+<style type="text/css">
+/* DOCUMENT BASICS*/
+html{
+	background: url(https://rhchp.regis.edu/css/course_css/images/core/background_triangle.jpg) #cccccc;
+	background-repeat: repeat;
+}
+html:after {
+	content: "© Regis University. All Rights Reserved.";
+	text-align: center;
+	font-size: .75em;
+	color: #002b49;
+	width:100%;
+	display:block;
+}
+
+body {
+	margin: 1em 0 2em 0;
+	padding-bottom:20px;
+	background-color:#FFFFFF;
+	line-height:1.4;
+	font-family: 'Open Sans', Arial, Helvetica, sans-serif;
+}
+
+/* STANDARD TEXT */
+h1 {
+	font-size: 1.25em;
+	font-weight: bold;
+	text-align: right;
+	color: white;
+	background-color: #000a29;
+	margin: 0 0 3em 0;
+	padding: .35em 2em .43em 19em;
+	border-bottom: .4em solid #f1552d;
+}
+h1 > img { /* BANNER */
+	position: absolute;
+	left: -.25em; top: .82em;
+}
+h1:before { /*BANNER*/
+	position:absolute;
+	left:-.25em;
+	top:.82em;
+	height:96px;
+	width:339px;
+	background-image:url('https://rhchp.regis.edu/css/course_css/stylesheets/images/header_ribbon.png');
+	content:' ';
+}
+h2, h3, h4, h5, h6 {
+	font-weight: 700;
+	color: #000a29;
+	padding: .5em .5em .35em .5em;
+}
+
+h2 {
+	font-size: 1.25em;
+    background-color: #dce1f1;
+    margin-top: 20px;
+    font-weight: 900;
+    border-bottom: 2px solid #f8b2a0;
+    border-radius: 5px 5px 0 0;
+}
+
+h3 {
+	font-size: 1.15em;
+	color: #fff;
+	background-color:#052648;
+	border-radius: 0 0 5px 5px;
+	margin-top: 10px;
+}
+
+h4 {
+	font-size: 1.05em;
+    margin-top: 5px;
+	border-bottom:1px solid #9b9ea7;
+}
+
+h5 {
+	font-size: 0.95em;
+	color: #f1552d;
+}
+
+h6 {
+	font-size: 0.85em;
+}
+
+p {
+	font-size: .875em;
+	padding: 1em .5em 1em .5em;
+}
+
+a,a:hover,a:visited {color:#002b49; text-decoration:underline;font-weight:bold;}
+
+/* TEXT CLASSES */
+.jesuit{
+	margin-left: auto; margin-right: auto;
+	margin-top:20px; margin-bottom:20px;
+	width: 80%;
+	background-color: #9AB3FF;
+	border: 1px solid #F8B2A0;
+	border-radius:.5em;
+	padding: .5em;
+	clear: both;
+	overflow: hidden;
+	font-size:1em;
+	font-weight:400;
+}
+.jesuit:before {
+	float: right;
+	content: url(https://rhchp.regis.edu/css/course_css/images/core/icon_jesuit.png);
+}
+
+.callout_right{
+	margin-left:20%;
+	background-color: #dce1f1;
+	border: 1px solid #F8B2A0;
+	font-size:1em;
+	font-weight:400;
+}
+
+.callout_left{
+	margin-right:20%;
+	margin-left:1em;
+	margin-bottom:2em;
+	background-color: #dce1f1;
+	border: 1px solid #F8B2A0;
+	border-left:1em solid #F8B2A0;
+	font-size:1em;
+	font-weight:400;
+}
+
+.callout_center{
+	margin-left:10%;
+	margin-right:10%;
+	background-color: #dce1f1;
+	border: 1px solid #F8B2A0;
+	font-size:1em;
+	font-weight:400;
+}
+
+.callout_center img.icon { position: relative; top: .5em; height: 30px; width:30px; margin-right: 10px;margin-left: 2px;}
+
+.center:not(table){
+	text-align:center;
+}
+.right:not(table){
+	text-align:right;
+}
+
+.callout-quote {
+	font-style: italic;
+	text-align: center;
+	background-image:url(images/core/quote_open.png), url(images/core/quote_close.png);
+	background-position: top left, bottom right;
+	background-repeat: no-repeat, no-repeat;
+	width: 50%;
+	border-top: 4px solid #186597;
+	border-bottom: 2px solid #b0aca2;
+	margin-left: auto;
+	margin-right: auto;
+	font-size: 90%;
+	background-color:#e6e4df;
+	-moz-box-shadow: 1px 1px 4px #b0aca2;
+	-webkit-box-shadow: 1px 1px 4px #b0aca2;
+	box-shadow: 1px 1px 4px #b0aca2;
+	/* For IE 8 */
+    -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#b0aca2')";
+}
+
+/* TABLES */
+tr:nth-child(odd){
+	 background-color:#ccc;
+}
+tr:nth-child(even){ 
+    background-color:#fff;
+}
+tr:hover{ 
+	background: #9AB3FF;
+}
+td, th{
+	padding: .5em .75em .5em .75em;
+	min-width: 3em;
+	vertical-align:top;
+}
+th{
+	background-color:#000a29;
+	color:white;
+}
+
+table.center{
+	margin-left:auto;
+	margin-right:auto;
+	max-width:90%;
+}
+
+/* LISTS */
+/*lists*/
+
+ul {
+	list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/bullet.gif');
+	padding-left:0;
+	list-style-position:outside;
+}
+ol , ul ol {
+	padding-left:2em;
+	list-style-position:outside;
+	list-style-type:decimal;
+	list-style-image:none;
+ }
+ol ol {
+	padding-left:2em;
+	list-style-position:outside;
+	list-style-type:lower-alpha;
+	list-style-image:none;
+ } 
+ol ol ol {
+	padding-left:2em;
+	list-style-position:outside;
+	list-style-type:lower-roman;
+	list-style-image:none;
+ } 
+ 
+li {
+	padding:.5em 1em;
+	font-size: .875em;
+}
+li li{
+	padding: .5em 0 .5em 0;
+	font-size: 1em;
+}
+li li:before{}
+li.jesuit {margin-left: 5px; background-color: #efefef;}
+/*code callout*/
+
+.code {
+	background-color: #efefef;
+	font-family:"Courier New",Courier,sans-serif;
+	font-size: small;
+	white-space: pre;
+	padding: 1em;
+	border-radius: 1em;
+	border: 1px dotted #333;
+	overflow:auto;
+}
+
+/*accents*/
+.red  {color:#49002b;}
+.green {color: #2b4900;}
+.blue {color: #002b49;}
+.orange{color:#F8B2A0; font-weight:bold;}
+</style>
+<!-- A few additional, custom styles for the Computer Science program within the Regis College of Computer and Information Sciences  -->
+<style type="text/css">
+/* DOCUMENT BASICS*/
+h1 {
+	border-bottom: .4em solid #839f54;
+}
+h1:before { /*BANNER*/
+	background-image:url('https://rhchp.regis.edu/css/course_css/stylesheets/images/header_ribbon_cs_green.png');
+}
+h1.no_image {text-align:left; padding-left:1em; margin:0 0 1em 0;}
+h1.no_image:before {background-image:none;}
+
+h2, h3, h4, h5, h6 {
+	background-color:transparent;
+	border-bottom: 0;
+	border-radius:0;
+}
+
+h2 {
+	font-size: 1.275em;
+	font-weight:900;
+	padding-left:.5em;
+}
+
+h3 {
+    font-size: 1.175em;
+	color: #506E1C;
+	padding-left:.75em;
+}
+
+h4 {
+	font-size: 1.075em;
+	padding-left:1em;
+}
+
+h5 {
+	font-size: .975em;
+	color: #506E1C;
+	padding-left:1.25em;
+}
+
+h6 {
+	font-size: .875em;
+	padding-left:1.5em;
+}
+
+p {
+	font-size: .875em;
+	padding: 1em .5em 1em 2em;
+}
+
+a,a:hover,a:visited {color:#002b49; text-decoration:underline;font-weight:bold;}
+
+/* TEXT CLASSES */
+
+.callout_right{
+	background-color: #9AB3FF;
+	border: 1px solid #839f54;
+}
+
+.callout_left{
+	background-color: #BAD3FF;
+	border: 1px solid #839f54;
+	border-left:1em solid #839f54;
+}
+
+.callout_center{
+	background-color: #9AB3FF;
+	border: 1px solid #839f54;
+}
+
+.indent{
+	padding-left:3.5em;
+}
+
+/* TABLES */
+.no_zebra tr:nth-child(odd){
+	 background-color:#fff;
+}
+.no_zebra tr:nth-child(even){ 
+    background-color:#fff;
+}
+.no_zebra tr:hover{ 
+	background: #fff;
+}
+
+/* LISTS */
+
+ul {
+	padding-left:3.5em;
+}
+ul ul {list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/green_bullet.gif');}
+ul ul ul {list-style-image:url('https://rhchp.regis.edu/css/course_css/images/core/smaller_bullet.gif');}
+
+ol  {
+	padding-left:3.5em;
+}
+li {
+	padding: .5em 0 .5em 0;
+	font-size: .875em;
+    margin-left: 0;
+}
+
+
+/*code callout*/
+.code {
+	margin-left:2em;
+}
+.code_courier {font-family:"Courier New",Courier,sans-serif;}
+
+/*accents*/
+.red  {color:#a5010c;}
+.green {color:#3d6c17;}
+.blue {color:#020a83;}
+.yellow{color:#ffff00;}
+.orange{color:#e66b0b;}
+.purple{color:#800080;}
+
+/*images*/
+.wrap_right{
+	float:right;
+	margin:0 0.5em;
+}
+.wrap_left{
+	float:right;
+	margin:0 0.5em;
+}
+</style>
+<!-- CSS specifically for this very generic knowledge check wysywidget -->
+<style type="text/css">
+.section {padding-left:1em;}
+.question {padding-left:1em;}
+label {padding-left:1.5em;}
+.sectionText{font-size:1em;}
+.questionText{font-size:1em;}
+.answerText{font-size:1em;}
+.feedbackText{display:none;}
+.feedbackText0{display:block; background-color:#dd2222; padding:5px; margin-left:2em; margin-bottom:15px;}
+.feedbackText1{display:block; background-color:#22dd22; padding:5px; margin-left:2em; margin-bottom:15px;}
+input[type="text"]{margin-left:1.5em;}
+button{margin-left:1.5em;}
+</style>
+
+</head>
+<body>
+<h1>WYSYWIDGETS - How To</h1>
+<p>WYSYWIDGETS provide interactive content to students and&nbsp;can be edited by using the WYSIWYG editor. Tabbed content, tooltips, inline-display hyperlinks, and knowledge checks&nbsp;are all types of WYSYWIDGETS that are available to you to use. <br />(If you would like a new type of WYSYWIDGET, please contact your Course Maintainer with your request.)</p>
+<p><iframe id="kaltura_player" src="https://cdnapisec.kaltura.com/p/425001/sp/42500100/embedIframeJs/uiconf_id/19587242/partner_id/425001?iframeembed=true&amp;playerId=kaltura_player&amp;entry_id=0_xklp073i&amp;flashvars[mediaProtocol]=rtmp&amp;flashvars[streamerType]=rtmp&amp;flashvars[streamerUrl]=rtmp://www.kaltura.com:1935&amp;flashvars[rtmpFlavors]=1&amp;flashvars[localizationCode]=en&amp;&amp;wid=0_b7xnr7zm" width="608" height="402" allowfullscreen="" webkitallowfullscreen="" mozallowfullscreen="" frameborder="0"></iframe></p>
+<p>The first step is to create a new file and then Select a Document Template titled "WYSYWIDGETS." Your new file will now contain some example WYSYWIDGET content.&nbsp;You will notice that the example content is contained within a set of tables when you are in editing mode and that the example content shows up as a set of interactive tools for students when you are not editing.</p>
+<p><img src="add_wysywidgets_from_template.png" alt="" title="" /></p>
+<p></p>
+<p>In order to change the content of a WYSYWIDGET, just change the content found in the related WYSYWIDGET tables that are visible only from the editing interface.&nbsp;Each type of WYSYWIDGET table has a distinct background color for&nbsp;its table's caption and each caption describes the WYSYWIDGET type. Also, the header elements in the top row of each WYSYWIDGET table describe the purpose of each column in each table. For instance, you will see a header element that says "Button Text" for the Button WYSYWIDGET table.</p>
+<p><img src="wysywidget_table_types.png" alt="" title="" /></p>
+<p></p>
+<p>Blank rows in a WYSYWIDGET table are ignored only if all elements in that row are blank. Partially blank rows in WYSYWIDGET tables may cause problems or may just look funny or be partially functional when seen by the student.</p>
+<p>Adding new rows to WYSYWIDGET tables can be done from your keyboard by pressing the 'tab' key or can be done using the WYSIWYG toolbar's table interface ("insert row," "after" or "before"). It is rather difficult to delete a table row without the use of the WYSIWYG toolbar so I would suggest just using the toolbar. If you must, row deletion can be done by highlighing all text in a row and partially highlighting the end of the previous row before pressing 'backspace' or 'delete.'</p>
+<p>If you want to have several WYSYWIDGETS of the same type on a single page, make a copy of the related WYSYWIDGET table and paste that copy elsewhere in the editable page. Then, just update the content rows of the newly copied table and you will see your new WYSYWIDGET appear for students after saving your changes.</p>
+<p>Anything that can be placed into a normal page can be placed inside a WYSYWIDGET. Be careful though, if you paste to much fancy content into WYSYWIDGETS, your page will load as slowly as it would had all that fancy content been pasted elsewhere in the page. This may change soon, but, for now, please don't overwhelm a page with content.</p>
+</body>
+</html>
